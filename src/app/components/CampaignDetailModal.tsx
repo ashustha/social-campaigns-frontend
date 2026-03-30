@@ -1,6 +1,25 @@
-import { X, Users, Calendar, MapPin, Mail, Target, Heart, Store, ThumbsUp, ThumbsDown, Share2, Facebook, Twitter, Linkedin } from 'lucide-react';
+import {
+  X,
+  Users,
+  Calendar,
+  MapPin,
+  Mail,
+  Target,
+  Heart,
+  Store,
+  ThumbsUp,
+  ThumbsDown,
+  Share2,
+  Facebook,
+  Twitter,
+  Linkedin,
+} from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { useState } from 'react';
+import { ConfirmationModal } from './ConfirmationModal';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { useAuth } from '../context/AuthContext';
+import { fetchCampaignVotes, voteCampaign } from '../services/campaignApi';
 
 interface Campaign {
   id: string;
@@ -25,64 +44,140 @@ interface CampaignDetailModalProps {
   onClose: () => void;
   onSupportCause: () => void;
   onLearnMore: () => void;
+  onVoteUpdate?: (
+    campaignId: string,
+    upvotes: number,
+    downvotes: number,
+  ) => void;
 }
 
-export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearnMore }: CampaignDetailModalProps) {
+function formatDisplayDate(dateValue: string) {
+  const parsedDate = new Date(dateValue);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return dateValue;
+  }
+
+  return parsedDate.toLocaleDateString('en-GB');
+}
+
+export function CampaignDetailModal({
+  campaign,
+  onClose,
+  onSupportCause,
+  onLearnMore,
+  onVoteUpdate,
+}: CampaignDetailModalProps) {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [upvotes, setUpvotes] = useState(campaign.upvotes || 0);
   const [downvotes, setDownvotes] = useState(campaign.downvotes || 0);
-  const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
+  const [userVote, setUserVote] = useState<'upvote' | 'downvote' | null>(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [isSubmittingVote, setIsSubmittingVote] = useState(false);
+  const [showLoginVotePrompt, setShowLoginVotePrompt] = useState(false);
+
+  useEffect(() => {
+    setUpvotes(campaign.upvotes || 0);
+    setDownvotes(campaign.downvotes || 0);
+    setUserVote(null);
+  }, [campaign.id, campaign.upvotes, campaign.downvotes]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadVotes = async () => {
+      const response = await fetchCampaignVotes(campaign.id);
+
+      if (!response.success || !response.data || !isActive) {
+        return;
+      }
+
+      setUpvotes(response.data.upvotes);
+      setDownvotes(response.data.downvotes);
+      setUserVote(response.data.userVote);
+    };
+
+    void loadVotes();
+
+    return () => {
+      isActive = false;
+    };
+  }, [campaign.id]);
+
+  const submitVote = async (voteType: 'upvote' | 'downvote') => {
+    if (isSubmittingVote) {
+      return;
+    }
+
+    setIsSubmittingVote(true);
+    const response = await voteCampaign(campaign.id, voteType);
+
+    if (response.success && response.data) {
+      setUpvotes(response.data.upvotes);
+      setDownvotes(response.data.downvotes);
+      setUserVote(response.data.userVote);
+      onVoteUpdate?.(
+        campaign.id,
+        response.data.upvotes,
+        response.data.downvotes,
+      );
+    }
+
+    setIsSubmittingVote(false);
+  };
 
   const handleUpvote = () => {
-    if (userVote === 'up') {
-      setUpvotes(upvotes - 1);
-      setUserVote(null);
-    } else {
-      if (userVote === 'down') {
-        setDownvotes(downvotes - 1);
-      }
-      setUpvotes(upvotes + 1);
-      setUserVote('up');
+    if (!isAuthenticated) {
+      setShowLoginVotePrompt(true);
+      return;
     }
+
+    void submitVote('upvote');
   };
 
   const handleDownvote = () => {
-    if (userVote === 'down') {
-      setDownvotes(downvotes - 1);
-      setUserVote(null);
-    } else {
-      if (userVote === 'up') {
-        setUpvotes(upvotes - 1);
-      }
-      setDownvotes(downvotes + 1);
-      setUserVote('down');
+    if (!isAuthenticated) {
+      setShowLoginVotePrompt(true);
+      return;
     }
+
+    void submitVote('downvote');
   };
 
   const handleShare = (platform: string) => {
     const url = window.location.href;
     const text = `Check out this campaign: ${campaign.title}`;
-    
+
     switch (platform) {
       case 'facebook':
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+        window.open(
+          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+          '_blank',
+        );
         break;
       case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        window.open(
+          `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+          '_blank',
+        );
         break;
       case 'linkedin':
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+        window.open(
+          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+          '_blank',
+        );
         break;
     }
     setShowShareMenu(false);
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-white flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
@@ -90,8 +185,9 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
         <div className="fixed right-8 top-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-3 flex flex-col gap-3 border border-gray-200 z-50">
           <button
             onClick={handleUpvote}
+            disabled={isSubmittingVote}
             className={`flex flex-col items-center gap-1 px-4 py-3 rounded-lg transition-colors ${
-              userVote === 'up'
+              userVote === 'upvote'
                 ? 'bg-green-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-green-100'
             }`}
@@ -101,8 +197,9 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
           </button>
           <button
             onClick={handleDownvote}
+            disabled={isSubmittingVote}
             className={`flex flex-col items-center gap-1 px-4 py-3 rounded-lg transition-colors ${
-              userVote === 'down'
+              userVote === 'downvote'
                 ? 'bg-red-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-red-100'
             }`}
@@ -156,7 +253,7 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
             <X className="size-6" />
           </button>
         </div>
-        
+
         <div className="p-6">
           {/* Multimedia Area */}
           <div className="mb-6">
@@ -185,7 +282,9 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
                         : 'bg-purple-500 text-white'
                     }`}
                   >
-                    {campaign.type === 'cause' ? 'Social Cause' : 'Small Business'}
+                    {campaign.type === 'cause'
+                      ? 'Social Cause'
+                      : 'Small Business'}
                   </span>
                 </div>
                 <div className="absolute top-4 left-4">
@@ -201,8 +300,12 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
           <div className="space-y-6">
             {/* Primary Content */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">About This Campaign</h3>
-              <p className="text-lg text-gray-700 leading-relaxed">{campaign.fullDescription}</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                About This Campaign
+              </h3>
+              <p className="text-lg text-gray-700 leading-relaxed">
+                {campaign.fullDescription}
+              </p>
             </div>
 
             {/* Secondary Content - Campaign Stats */}
@@ -213,7 +316,9 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Supporters</p>
-                  <p className="text-xl font-bold text-gray-900">{campaign.supporters}</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {campaign.supporters}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -222,7 +327,9 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Start Date</p>
-                  <p className="text-xl font-bold text-gray-900">{campaign.startDate}</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {formatDisplayDate(campaign.startDate)}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -231,7 +338,9 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Location</p>
-                  <p className="text-xl font-bold text-gray-900">{campaign.location}</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {campaign.location}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -240,7 +349,9 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Contact</p>
-                  <p className="text-base font-bold text-gray-900">{campaign.contact}</p>
+                  <p className="text-base font-bold text-gray-900">
+                    {campaign.contact}
+                  </p>
                 </div>
               </div>
             </div>
@@ -253,7 +364,10 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
               </h3>
               <ul className="space-y-3">
                 {campaign.goals.map((goal, index) => (
-                  <li key={index} className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                  <li
+                    key={index}
+                    className="flex items-start gap-3 p-3 bg-green-50 rounded-lg"
+                  >
                     <div className="bg-green-500 rounded-full p-1 mt-1">
                       <div className="size-2 bg-white rounded-full"></div>
                     </div>
@@ -264,8 +378,8 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
             </div>
 
             {/* CTA Button */}
-            <button 
-              onClick={campaign.type === 'cause' ? onSupportCause : onLearnMore} 
+            <button
+              onClick={campaign.type === 'cause' ? onSupportCause : onLearnMore}
               className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg"
             >
               {campaign.type === 'cause' ? (
@@ -283,6 +397,15 @@ export function CampaignDetailModal({ campaign, onClose, onSupportCause, onLearn
           </div>
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={showLoginVotePrompt}
+        onClose={() => setShowLoginVotePrompt(false)}
+        title="Login Required"
+        message="You need to login to vote. Would you like to login now?"
+        confirmText="Login"
+        onConfirm={() => navigate('/login')}
+      />
     </div>
   );
 }

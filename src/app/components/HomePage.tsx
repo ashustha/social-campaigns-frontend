@@ -4,244 +4,41 @@ import { LogOut, Plus, User, X, LogIn, ChevronDown } from 'lucide-react';
 import Header from './Header';
 import { CampaignCard } from './CampaignCard';
 import { CampaignDetailModal } from './CampaignDetailModal';
-import { CreateCampaignWizard } from './CreateCampaignWizard';
 import { ConfirmationModal } from './ConfirmationModal';
 import { AlertModal } from './AlertModal';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from '../utils/toast';
+import {
+  fetchCampaigns,
+  inquiryCampaign,
+  supportCampaign,
+  type CampaignListItem,
+} from '../services/campaignApi';
 
-const socialCauses = [
-  {
-    id: '1',
-    title: 'Environmental Conservation',
-    description:
-      'Join our movement to protect natural habitats and promote sustainable living practices in communities across Australia.',
-    fullDescription:
-      "Our environmental conservation campaign is dedicated to protecting Australia's unique ecosystems and wildlife. We work with local communities to implement sustainable practices, reduce carbon footprints, and preserve natural habitats for future generations. Through education, advocacy, and hands-on conservation projects, we're making a real difference in combating climate change and protecting biodiversity.",
-    image:
-      'https://images.unsplash.com/photo-1669553228878-bcacc4e49168?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbnZpcm9ubWVudGFsJTIwY29uc2VydmF0aW9uJTIwbmF0dXJlfGVufDF8fHx8MTc3MTA0ODIzMnww&ixlib=rb-4.1.0&q=80&w=1080',
-    status: 'Active',
-    supporters: '3.2K',
-    type: 'cause' as const,
-    category: 'Environment',
-    startDate: '2026-01-15',
-    location: 'Melbourne, VIC',
-    contact: 'environment@advancedconsulting.com.au',
-    goals: [
-      'Plant 10,000 trees by end of 2026',
-      'Reduce local carbon emissions by 20%',
-      'Engage 5,000 community volunteers',
-    ],
-    upvotes: 245,
-    downvotes: 12,
-  },
-  {
-    id: '2',
-    title: 'Community Volunteering Initiative',
-    description:
-      'Help build stronger communities by volunteering your time and skills to support those in need across Melbourne and regional areas.',
-    fullDescription:
-      "The Community Volunteering Initiative connects passionate individuals with meaningful opportunities to make a difference. Whether you're helping at food banks, mentoring youth, or supporting elderly residents, your contribution matters. We coordinate volunteer efforts across multiple cities, ensuring that help reaches those who need it most while building stronger, more connected communities.",
-    image:
-      'https://images.unsplash.com/photo-1761666507437-9fb5a6ef7b0a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb21tdW5pdHklMjB2b2x1bnRlZXJpbmclMjBoZWxwaW5nfGVufDF8fHx8MTc3MTE0MjI5NHww&ixlib=rb-4.1.0&q=80&w=1080',
-    status: 'Active',
-    supporters: '5.8K',
-    type: 'cause' as const,
-    category: 'Community',
-    startDate: '2026-02-01',
-    location: 'Melbourne & Regional VIC',
-    contact: 'volunteer@advancedconsulting.com.au',
-    goals: [
-      'Match 1,000 volunteers with opportunities',
-      'Support 50 community organizations',
-      'Distribute 10,000 meals to those in need',
-    ],
-    upvotes: 387,
-    downvotes: 23,
-  },
-  {
-    id: '3',
-    title: 'Education for All Children',
-    description:
-      'Support equal access to quality education for children from all backgrounds. Every child deserves the opportunity to learn and grow.',
-    fullDescription:
-      "Education is the foundation of a better future. Our campaign provides resources, tutoring, and learning materials to underprivileged children across Australia. We believe every child, regardless of their background or circumstances, deserves access to quality education. Through partnerships with schools, libraries, and community centers, we're breaking down barriers to learning and creating opportunities for all.",
-    image:
-      'https://images.unsplash.com/photo-1765223111660-cdf94396832a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlZHVjYXRpb24lMjBjaGlsZHJlbiUyMGxlYXJuaW5nfGVufDF8fHx8MTc3MTA4NDQzNXww&ixlib=rb-4.1.0&q=80&w=1080',
-    status: 'Active',
-    supporters: '7.1K',
-    type: 'cause' as const,
-    category: 'Education',
-    startDate: '2026-01-20',
-    location: 'Sydney, NSW',
-    contact: 'education@advancedconsulting.com.au',
-    goals: [
-      'Provide learning materials to 2,000 students',
-      'Establish 15 community tutoring programs',
-      'Award 50 scholarships to deserving students',
-    ],
-    upvotes: 512,
-    downvotes: 31,
-  },
-  {
-    id: '4',
-    title: 'Local Coffee Roastery - Fresh Beans',
-    description:
-      'Small family-owned coffee roastery in Sydney offering ethically sourced, freshly roasted beans. Supporting local farmers and sustainable practices.',
-    fullDescription:
-      "Family-owned and operated since 2020, our coffee roastery is committed to excellence and sustainability. We source our beans directly from ethical farms, ensuring fair wages for farmers while delivering exceptional quality to our customers. Every batch is carefully roasted to perfection, bringing out unique flavor profiles. We're not just selling coffee - we're building relationships with our community and supporting sustainable agriculture worldwide.",
-    image:
-      'https://images.unsplash.com/photo-1761783536272-2fb78dd52c76?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsb2NhbCUyMHNtYWxsJTIwYnVzaW5lc3MlMjBvd25lcnxlbnwxfHx8fDE3NzExNDIyOTR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    status: 'Active',
-    supporters: '1.2K',
-    type: 'business' as const,
-    category: 'Food & Beverage',
-    startDate: '2026-02-10',
-    location: 'Sydney, NSW',
-    contact: 'hello@freshbeansroastery.com.au',
-    goals: [
-      'Expand to 3 new locations',
-      'Partner with 10 local cafes',
-      'Launch online subscription service',
-    ],
-    upvotes: 156,
-    downvotes: 8,
-  },
-  {
-    id: '5',
-    title: 'Social Justice & Equality',
-    description:
-      'Advocating for equal rights and opportunities for all members of society. Stand with us to create a more just and inclusive world.',
-    fullDescription:
-      'Social justice begins with awareness and action. Our campaign advocates for equal rights, opportunities, and treatment for all people regardless of race, gender, religion, or background. We work to address systemic inequalities through education, policy advocacy, and community organizing. Join us in building a society where everyone has a fair chance to succeed and thrive.',
-    image:
-      'https://images.unsplash.com/photo-1759171907618-95130c76ae5e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzb2NpYWwlMjBqdXN0aWNlJTIwZXF1YWxpdHl8ZW58MXx8fHwxNzcxMTQyMjk1fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    status: 'Active',
-    supporters: '9.4K',
-    type: 'cause' as const,
-    category: 'Social Justice',
-    startDate: '2026-01-10',
-    location: 'Brisbane, QLD',
-    contact: 'justice@advancedconsulting.com.au',
-    goals: [
-      'Host 20 community awareness events',
-      'Advocate for 5 policy changes',
-      'Provide legal aid to 100 individuals',
-    ],
-    upvotes: 624,
-    downvotes: 45,
-  },
-  {
-    id: '6',
-    title: 'Mental Health & Wellness',
-    description:
-      'Promoting mental health awareness and providing resources for those struggling. Together we can break the stigma and support healing.',
-    fullDescription:
-      "Mental health matters. Our campaign works to destigmatize mental health challenges and provide accessible resources for those in need. Through support groups, counseling services, and educational programs, we're creating a culture where seeking help is encouraged and supported. Mental wellness is essential to overall health, and we're committed to making mental health services available to everyone who needs them.",
-    image:
-      'https://images.unsplash.com/photo-1770223722037-8dc5d3dff8d3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGglMjB3ZWxsbmVzcyUyMGNvbW11bml0eXxlbnwxfHx8fDE3NzExNDIyOTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    status: 'Active',
-    supporters: '6.3K',
-    type: 'cause' as const,
-    category: 'Health',
-    startDate: '2026-02-05',
-    location: 'Adelaide, SA',
-    contact: 'wellness@advancedconsulting.com.au',
-    goals: [
-      'Establish 10 support groups',
-      'Provide free counseling to 500 people',
-      'Train 100 mental health first aiders',
-    ],
-    upvotes: 432,
-    downvotes: 19,
-  },
-  {
-    id: '7',
-    title: 'Green Thumb Landscaping Services',
-    description:
-      'Professional landscaping and garden design services in Perth. Transforming outdoor spaces into beautiful, sustainable gardens.',
-    fullDescription:
-      'With over 15 years of experience, Green Thumb Landscaping specializes in creating stunning outdoor environments that are both beautiful and environmentally sustainable. We offer comprehensive services including garden design, installation, and maintenance. Our team is passionate about using native plants and water-efficient designs to create spaces that thrive in the Australian climate while supporting local ecosystems.',
-    image:
-      'https://images.unsplash.com/photo-1558904541-efa843a96f01?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsYW5kc2NhcGluZyUyMGdhcmRlbiUyMHNlcnZpY2V8ZW58MXx8fHwxNzQwMDYzNTQ1fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    status: 'Active',
-    supporters: '892',
-    type: 'business' as const,
-    category: 'Home Services',
-    startDate: '2026-02-12',
-    location: 'Perth, WA',
-    contact: 'info@greenthumbperth.com.au',
-    goals: [
-      'Complete 100 residential projects',
-      'Hire 5 new team members',
-      'Win local business award',
-    ],
-    upvotes: 123,
-    downvotes: 7,
-  },
-  {
-    id: '8',
-    title: 'TechStart IT Solutions',
-    description:
-      'Brisbane-based IT consulting firm helping small businesses with technology solutions, cybersecurity, and cloud services.',
-    fullDescription:
-      'TechStart IT Solutions provides comprehensive technology services to small and medium-sized businesses across Queensland. We specialize in managed IT services, cybersecurity, cloud migration, and digital transformation. Our mission is to make enterprise-level technology accessible and affordable for growing businesses, helping them compete in the digital economy while keeping their data secure.',
-    image:
-      'https://images.unsplash.com/photo-1551434678-e076c223a692?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpdCUyMGNvbnN1bHRpbmclMjB0ZWNobm9sb2d5fGVufDF8fHx8MTc0MDA2MzU0NXww&ixlib=rb-4.1.0&q=80&w=1080',
-    status: 'Active',
-    supporters: '1.5K',
-    type: 'business' as const,
-    category: 'Technology',
-    startDate: '2026-01-25',
-    location: 'Brisbane, QLD',
-    contact: 'hello@techstartit.com.au',
-    goals: [
-      'Onboard 50 new clients',
-      'Launch cybersecurity training program',
-      'Open second office in Gold Coast',
-    ],
-    upvotes: 198,
-    downvotes: 11,
-  },
-  {
-    id: '9',
-    title: 'Artisan Bakery & Café',
-    description:
-      'Handcrafted sourdough bread and pastries made fresh daily in our Melbourne bakery. Supporting local farmers and traditional baking methods.',
-    fullDescription:
-      'Our artisan bakery brings the time-honored tradition of European baking to Melbourne. We use only the finest organic ingredients sourced from local Victorian farmers, and every loaf is hand-shaped and naturally leavened. Our commitment to quality extends beyond bread - we create a welcoming community space where neighbors gather, relationships form, and the simple pleasure of good food brings people together.',
-    image:
-      'https://images.unsplash.com/photo-1509440159596-0249088772ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWtlcnklMjBhcnRpc2FuJTIwYnJlYWR8ZW58MXx8fHwxNzQwMDYzNTQ1fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    status: 'Active',
-    supporters: '2.1K',
-    type: 'business' as const,
-    category: 'Food & Beverage',
-    startDate: '2026-02-08',
-    location: 'Melbourne, VIC',
-    contact: 'orders@artisanbakery.com.au',
-    goals: [
-      'Expand wholesale to 20 cafés',
-      'Launch baking workshops',
-      'Open second location in Carlton',
-    ],
-    upvotes: 267,
-    downvotes: 9,
-  },
+const LOCATION_FILTER_OPTIONS = [
+  'Melbourne',
+  'Sydney',
+  'Brisbane',
+  'Adelaide',
+  'Perth',
 ];
 
 export function HomePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [showConfirmCreateModal, setShowConfirmCreateModal] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [showAlert, setShowAlert] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<
-    (typeof socialCauses)[0] | null
-  >(null);
+  const [campaigns, setCampaigns] = useState<CampaignListItem[]>([]);
+  const [campaignsError, setCampaignsError] = useState('');
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
+  const [selectedCampaign, setSelectedCampaign] =
+    useState<CampaignListItem | null>(null);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showLearnMoreModal, setShowLearnMoreModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isSubmittingSupport, setIsSubmittingSupport] = useState(false);
+  const [isSubmittingInquiry, setIsSubmittingInquiry] = useState(false);
   const [supportForm, setSupportForm] = useState({
     name: '',
     email: '',
@@ -255,16 +52,67 @@ export function HomePage() {
     message: '',
   });
   const [filterType, setFilterType] = useState<'all' | 'cause' | 'business'>(
-    'all'
+    'all',
   );
   const [filterLocation, setFilterLocation] = useState<string>('all');
 
-  const filteredCampaigns = socialCauses.filter((campaign) => {
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadCampaigns() {
+      setIsLoadingCampaigns(true);
+      setCampaignsError('');
+
+      const response = await fetchCampaigns();
+      if (!isActive) {
+        return;
+      }
+
+      if (!response.success) {
+        setCampaigns([]);
+        setCampaignsError(response.message);
+        setIsLoadingCampaigns(false);
+        return;
+      }
+
+      setCampaigns(response.data);
+      setIsLoadingCampaigns(false);
+    }
+
+    void loadCampaigns();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const filteredCampaigns = campaigns.filter((campaign) => {
     const typeMatch = filterType === 'all' || campaign.type === filterType;
     const locationMatch =
       filterLocation === 'all' || campaign.location.includes(filterLocation);
     return typeMatch && locationMatch;
   });
+
+  useEffect(() => {
+    if (isLoadingCampaigns) {
+      return;
+    }
+
+    console.log('All campaigns:', campaigns);
+  }, [campaigns, isLoadingCampaigns]);
+
+  useEffect(() => {
+    if (isLoadingCampaigns) {
+      return;
+    }
+
+    console.log('Filtered campaigns:', filteredCampaigns);
+  }, [filteredCampaigns, isLoadingCampaigns]);
+
+  const isValidAustralianPhone = (value: string) => {
+    const normalizedPhone = value.replace(/[\s()-]/g, '');
+    return /^(\+61|0)[2-478]\d{8}$/.test(normalizedPhone);
+  };
 
   const handleLogout = () => {
     logout();
@@ -272,6 +120,28 @@ export function HomePage() {
   };
 
   const handleSupportCause = () => {
+    const storedUser = localStorage.getItem('user');
+    let storedName = user?.name ?? '';
+    let storedEmail = user?.email ?? '';
+
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser) as {
+          name?: string;
+          email?: string;
+        };
+        storedName = parsedUser.name ?? storedName;
+        storedEmail = parsedUser.email ?? storedEmail;
+      } catch {
+        // Ignore invalid localStorage payload and use context values.
+      }
+    }
+
+    setSupportForm((previousForm) => ({
+      ...previousForm,
+      name: storedName,
+      email: storedEmail,
+    }));
     setShowSupportModal(true);
   };
 
@@ -285,17 +155,57 @@ export function HomePage() {
     });
   };
 
-  const handleSupportSubmit = (e: React.FormEvent) => {
+  const handleSupportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAlertMessage(
-      `Thank you for supporting ${selectedCampaign?.title}! Your support means everything.`
+
+    if (!selectedCampaign) {
+      return;
+    }
+
+    setIsSubmittingSupport(true);
+
+    const response = await supportCampaign(selectedCampaign.id, supportForm);
+
+    setIsSubmittingSupport(false);
+
+    if (!response.success) {
+      setAlertMessage(response.message);
+      setShowAlert(true);
+      return;
+    }
+
+    toast.success(
+      'Support Submitted',
+      response.message ||
+        `Thank you for supporting ${selectedCampaign.title}! Your support means everything.`,
     );
-    setShowAlert(true);
     closeSupportModal();
     setSelectedCampaign(null);
   };
 
   const handleLearnMore = () => {
+    const storedUser = localStorage.getItem('user');
+    let storedName = user?.name ?? '';
+    let storedEmail = user?.email ?? '';
+
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser) as {
+          name?: string;
+          email?: string;
+        };
+        storedName = parsedUser.name ?? storedName;
+        storedEmail = parsedUser.email ?? storedEmail;
+      } catch {
+        // Ignore invalid localStorage payload and use context values.
+      }
+    }
+
+    setLearnMoreForm((previousForm) => ({
+      ...previousForm,
+      name: storedName,
+      email: storedEmail,
+    }));
     setShowLearnMoreModal(true);
   };
 
@@ -309,22 +219,40 @@ export function HomePage() {
     });
   };
 
-  const handleLearnMoreSubmit = (e: React.FormEvent) => {
+  const handleLearnMoreSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAlertMessage(
-      `Thank you for your interest in ${selectedCampaign?.title}! We'll contact you soon with more information.`
+
+    if (!selectedCampaign) {
+      return;
+    }
+
+    if (!isValidAustralianPhone(learnMoreForm.phone)) {
+      setAlertMessage(
+        'Please enter a valid Australian phone number (e.g. 0412345678 or +61412345678).',
+      );
+      setShowAlert(true);
+      return;
+    }
+
+    setIsSubmittingInquiry(true);
+
+    const response = await inquiryCampaign(selectedCampaign.id, learnMoreForm);
+
+    setIsSubmittingInquiry(false);
+
+    if (!response.success) {
+      setAlertMessage(response.message);
+      setShowAlert(true);
+      return;
+    }
+
+    toast.success(
+      'Inquiry Submitted',
+      response.message ||
+        `Thank you for your interest in ${selectedCampaign.title}! We'll contact you soon with more information.`,
     );
-    setShowAlert(true);
     closeLearnMoreModal();
     setSelectedCampaign(null);
-  };
-
-  const handleCreateSubmit = (formData: any) => {
-    setAlertMessage(
-      `Campaign "${formData.title}" has been submitted for review! We'll notify you once it's approved.`
-    );
-    setShowAlert(true);
-    setShowCreateModal(false);
   };
 
   const handleCreateCampaign = () => {
@@ -332,16 +260,36 @@ export function HomePage() {
       setShowLoginPrompt(true);
       return;
     }
-    setShowConfirmCreateModal(true);
+    navigate('/campaign/new');
   };
 
-  const handleConfirmCreate = () => {
-    setShowConfirmCreateModal(false);
-    setShowCreateModal(true);
-  };
+  const handleVoteUpdate = (
+    campaignId: string,
+    upvotes: number,
+    downvotes: number,
+  ) => {
+    setCampaigns((previousCampaigns) =>
+      previousCampaigns.map((campaign) =>
+        campaign.id === campaignId
+          ? { ...campaign, upvotes, downvotes }
+          : campaign,
+      ),
+    );
 
-  const handleCancelCreate = () => {
-    setShowConfirmCreateModal(false);
+    setSelectedCampaign((previousSelectedCampaign) => {
+      if (
+        !previousSelectedCampaign ||
+        previousSelectedCampaign.id !== campaignId
+      ) {
+        return previousSelectedCampaign;
+      }
+
+      return {
+        ...previousSelectedCampaign,
+        upvotes,
+        downvotes,
+      };
+    });
   };
 
   return (
@@ -446,11 +394,11 @@ export function HomePage() {
               className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Locations</option>
-              <option value="Melbourne">Melbourne</option>
-              <option value="Sydney">Sydney</option>
-              <option value="Brisbane">Brisbane</option>
-              <option value="Adelaide">Adelaide</option>
-              <option value="Perth">Perth</option>
+              {LOCATION_FILTER_OPTIONS.map((location) => (
+                <option key={location} value={location}>
+                  {location}
+                </option>
+              ))}
             </select>
 
             <span className="text-sm text-gray-600 ml-auto">
@@ -460,18 +408,36 @@ export function HomePage() {
           </div>
         </div>
 
-        {/* Campaigns Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCampaigns.map((campaign) => (
-            <CampaignCard
-              key={campaign.id}
-              campaign={campaign}
-              onReadMore={setSelectedCampaign}
-            />
-          ))}
-        </div>
+        {campaignsError && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {campaignsError}
+          </div>
+        )}
 
-        {filteredCampaigns.length === 0 && (
+        {/* Campaigns Grid */}
+        {isLoadingCampaigns ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-[420px] animate-pulse rounded-xl bg-white shadow-md"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCampaigns.map((campaign) => (
+              <CampaignCard
+                key={campaign.id}
+                campaign={campaign}
+                onReadMore={setSelectedCampaign}
+                onVoteUpdate={handleVoteUpdate}
+              />
+            ))}
+          </div>
+        )}
+
+        {!isLoadingCampaigns && filteredCampaigns.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">
               No campaigns found matching your filters.
@@ -496,6 +462,7 @@ export function HomePage() {
           onClose={() => setSelectedCampaign(null)}
           onSupportCause={handleSupportCause}
           onLearnMore={handleLearnMore}
+          onVoteUpdate={handleVoteUpdate}
         />
       )}
 
@@ -537,6 +504,7 @@ export function HomePage() {
                     onChange={(e) =>
                       setSupportForm({ ...supportForm, name: e.target.value })
                     }
+                    disabled
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     required
                   />
@@ -555,6 +523,7 @@ export function HomePage() {
                     onChange={(e) =>
                       setSupportForm({ ...supportForm, email: e.target.value })
                     }
+                    disabled
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     required
                   />
@@ -599,9 +568,10 @@ export function HomePage() {
                 </div>
                 <button
                   type="submit"
+                  disabled={isSubmittingSupport}
                   className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                 >
-                  Support This Cause
+                  {isSubmittingSupport ? 'Submitting...' : 'Support This Cause'}
                 </button>
               </form>
             </div>
@@ -650,6 +620,7 @@ export function HomePage() {
                         name: e.target.value,
                       })
                     }
+                    disabled
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     required
                   />
@@ -671,6 +642,7 @@ export function HomePage() {
                         email: e.target.value,
                       })
                     }
+                    disabled
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     required
                   />
@@ -692,6 +664,8 @@ export function HomePage() {
                         phone: e.target.value,
                       })
                     }
+                    placeholder="0412345678 or +61412345678"
+                    title="Enter a valid Australian phone number"
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     required
                   />
@@ -718,32 +692,15 @@ export function HomePage() {
                 </div>
                 <button
                   type="submit"
+                  disabled={isSubmittingInquiry}
                   className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                 >
-                  Submit Inquiry
+                  {isSubmittingInquiry ? 'Submitting...' : 'Submit Inquiry'}
                 </button>
               </form>
             </div>
           </div>
         </div>
-      )}
-
-      {/* Create Campaign Wizard */}
-      {showCreateModal && (
-        <CreateCampaignWizard
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={handleCreateSubmit}
-        />
-      )}
-
-      {/* Confirmation Modal */}
-      {showConfirmCreateModal && (
-        <ConfirmationModal
-          title="Create Campaign"
-          message="Are you sure you want to create a new campaign? This will take you to the campaign creation wizard."
-          onConfirm={handleConfirmCreate}
-          onCancel={handleCancelCreate}
-        />
       )}
 
       {/* Login Prompt */}
