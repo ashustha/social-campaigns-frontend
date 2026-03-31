@@ -12,19 +12,12 @@ import Header from './Header';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { ConfirmationModal } from './ConfirmationModal';
 import { AlertModal } from './AlertModal';
-import { useState } from 'react';
-
-interface UserCampaign {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  type: 'cause' | 'business';
-  category: string;
-  status: 'Active' | 'Pending' | 'Completed';
-  supporters: string;
-  startDate: string;
-}
+import { useEffect, useState } from 'react';
+import {
+  deleteCampaign as deleteCampaignApi,
+  fetchMyCampaigns,
+  UserCampaignItem,
+} from '../services/campaignApi';
 
 interface UserDashboardProps {
   onCreateCampaign: () => void;
@@ -37,21 +30,44 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<string | null>(null);
   const [showAlert, setShowAlert] = useState(false);
-  const [campaigns, setCampaigns] = useState<UserCampaign[]>([
-    {
-      id: '1',
-      title: 'Environmental Conservation',
-      description:
-        'Join our movement to protect natural habitats and promote sustainable living practices in communities across Australia.',
-      image:
-        'https://images.unsplash.com/photo-1669553228878-bcacc4e49168?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbnZpcm9ubWVudGFsJTIwY29uc2VydmF0aW9uJTIwbmF0dXJlfGVufDF8fHx8MTc3MTA0ODIzMnww&ixlib=rb-4.1.0&q=80&w=1080',
-      type: 'cause',
-      category: 'Environment',
-      status: 'Active',
-      supporters: '3.2K',
-      startDate: '2026-01-15',
-    },
-  ]);
+  const [alertTitle, setAlertTitle] = useState('Campaign Deleted');
+  const [alertMessage, setAlertMessage] = useState(
+    'The campaign has been deleted successfully.',
+  );
+  const [campaigns, setCampaigns] = useState<UserCampaignItem[]>([]);
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
+  const [campaignsError, setCampaignsError] = useState('');
+  const [isDeletingCampaign, setIsDeletingCampaign] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCampaigns = async () => {
+      setIsLoadingCampaigns(true);
+      setCampaignsError('');
+
+      const result = await fetchMyCampaigns();
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (result.success) {
+        setCampaigns(result.data);
+      } else {
+        setCampaigns([]);
+        setCampaignsError(result.message || 'Failed to load your campaigns.');
+      }
+
+      setIsLoadingCampaigns(false);
+    };
+
+    loadCampaigns();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -63,12 +79,33 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    if (campaignToDelete) {
-      setCampaigns(campaigns.filter((c) => c.id !== campaignToDelete));
-      setShowAlert(true);
-      setShowDeleteModal(false);
+  const confirmDelete = async () => {
+    if (!campaignToDelete || isDeletingCampaign) {
+      return;
     }
+
+    setIsDeletingCampaign(true);
+    const result = await deleteCampaignApi(campaignToDelete);
+
+    if (result.success) {
+      setCampaigns((prevCampaigns) =>
+        prevCampaigns.filter((campaign) => campaign.id !== campaignToDelete),
+      );
+      setAlertTitle('Campaign Deleted');
+      setAlertMessage(
+        result.message || 'The campaign has been deleted successfully.',
+      );
+      setShowDeleteModal(false);
+      setShowAlert(true);
+    } else {
+      setAlertTitle('Delete Failed');
+      setAlertMessage(result.message || 'Unable to delete this campaign.');
+      setShowDeleteModal(false);
+      setShowAlert(true);
+    }
+
+    setCampaignToDelete(null);
+    setIsDeletingCampaign(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -82,6 +119,19 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
       default:
         return 'bg-blue-100 text-blue-800';
     }
+  };
+
+  const formatDisplayDate = (dateValue: string) => {
+    if (!dateValue || dateValue === 'TBD') {
+      return dateValue || 'TBD';
+    }
+
+    const parsedDate = new Date(dateValue);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return dateValue;
+    }
+
+    return parsedDate.toLocaleDateString('en-GB');
   };
 
   return (
@@ -111,7 +161,11 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
           </button>
         </div>
 
-        {campaigns.length === 0 ? (
+        {isLoadingCampaigns ? (
+          <div className="bg-white rounded-xl shadow-md p-8 text-center text-gray-600">
+            Loading your campaigns...
+          </div>
+        ) : campaigns.length === 0 ? (
           <div className="bg-white rounded-xl shadow-md p-12 text-center">
             <div className="max-w-md mx-auto">
               <div className="bg-blue-100 rounded-full p-6 w-24 h-24 mx-auto mb-4 flex items-center justify-center">
@@ -175,7 +229,7 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
                           </span>
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                              campaign.status
+                              campaign.status,
                             )}`}
                           >
                             {campaign.status}
@@ -205,7 +259,7 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
                       <div>
                         Started on{' '}
                         <span className="font-semibold text-gray-900">
-                          {campaign.startDate}
+                          {formatDisplayDate(campaign.startDate)}
                         </span>
                       </div>
                     </div>
@@ -213,6 +267,12 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {!isLoadingCampaigns && campaignsError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mt-6">
+            {campaignsError}
           </div>
         )}
       </main>
@@ -223,15 +283,19 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDelete}
         title="Delete Campaign"
-        message="Are you sure you want to delete this campaign?"
+        message={
+          isDeletingCampaign
+            ? 'Deleting campaign...'
+            : 'Are you sure you want to delete this campaign?'
+        }
       />
 
       {/* Alert Modal */}
       <AlertModal
         isOpen={showAlert}
         onClose={() => setShowAlert(false)}
-        title="Campaign Deleted"
-        message="The campaign has been deleted successfully."
+        title={alertTitle}
+        message={alertMessage}
       />
     </div>
   );

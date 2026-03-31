@@ -49,6 +49,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('user');
       }
     }
+
+    const handleAuthLogout = () => {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+    };
+
+    const handleTokenUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<{ token?: string }>;
+      const nextToken =
+        customEvent.detail?.token ?? localStorage.getItem('authToken') ?? null;
+      setToken(nextToken);
+    };
+
+    window.addEventListener('auth:logout', handleAuthLogout);
+    window.addEventListener('auth:token-updated', handleTokenUpdated);
+
+    return () => {
+      window.removeEventListener('auth:logout', handleAuthLogout);
+      window.removeEventListener('auth:token-updated', handleTokenUpdated);
+    };
   }, []);
 
   const login = async (
