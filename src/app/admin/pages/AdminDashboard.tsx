@@ -1,14 +1,40 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { getAdminUser, fetchAdminDashboard } from '../services/adminAuth';
 import type { AdminDashboardData } from '../services/adminAuth';
 
 export function AdminDashboard() {
   const user = getAdminUser();
+  const navigate = useNavigate();
   const [data, setData] = useState<AdminDashboardData | null>(null);
 
   useEffect(() => {
     fetchAdminDashboard().then(setData);
   }, []);
+
+  const cards = [
+    { label: 'Total Users', value: data?.totalUsers, path: '/admin/users' },
+    {
+      label: 'Total Campaigns',
+      value: data?.totalCampaigns,
+      path: '/admin/campaigns',
+    },
+    {
+      label: 'Total Inquiries',
+      value: data?.totalInquiries,
+      path: '/admin/inquiries',
+    },
+    {
+      label: 'Total Supports',
+      value: data?.totalSupports,
+      path: '/admin/supports',
+    },
+    {
+      label: 'Total Funding',
+      value: data ? `$${data.totalFunding}` : undefined,
+      path: '/admin/supports',
+    },
+  ];
 
   return (
     <div>
@@ -18,36 +44,18 @@ export function AdminDashboard() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <h3 className="text-sm font-medium text-gray-500">Total Users</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">
-            {data === null ? '...' : data.totalUsers}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <h3 className="text-sm font-medium text-gray-500">Total Campaigns</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">
-            {data === null ? '...' : data.totalCampaigns}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <h3 className="text-sm font-medium text-gray-500">Total Inquiries</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">
-            {data === null ? '...' : data.totalInquiries}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <h3 className="text-sm font-medium text-gray-500">Total Supports</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">
-            {data === null ? '...' : data.totalSupports}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <h3 className="text-sm font-medium text-gray-500">Total Funding</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">
-            {data === null ? '...' : `$${data.totalFunding}`}
-          </p>
-        </div>
+        {cards.map((card) => (
+          <div
+            key={card.label}
+            onClick={() => navigate(card.path)}
+            className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 cursor-pointer hover:shadow-md hover:border-gray-300 transition-all"
+          >
+            <h3 className="text-sm font-medium text-gray-500">{card.label}</h3>
+            <p className="text-3xl font-bold text-gray-900 mt-2">
+              {data === null ? '...' : card.value}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );

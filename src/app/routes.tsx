@@ -6,6 +6,10 @@ import { DashboardPage } from './components/DashboardPage';
 import { NewCampaignPage } from './components/NewCampaignPage';
 import { AdminLogin } from './admin/pages/AdminLogin';
 import { AdminDashboard } from './admin/pages/AdminDashboard';
+import { AdminUsers } from './admin/pages/AdminUsers';
+import { AdminCampaigns } from './admin/pages/AdminCampaigns';
+import { AdminInquiries } from './admin/pages/AdminInquiries';
+import { AdminSupports } from './admin/pages/AdminSupports';
 import { AdminLayout } from './admin/layout/AdminLayout';
 import { AdminRoute } from './admin/routes/AdminRoute';
 
@@ -45,6 +49,22 @@ export const router = createBrowserRouter([
       {
         path: 'dashboard',
         element: <AdminDashboard />,
+      },
+      {
+        path: 'users',
+        element: <AdminUsers />,
+      },
+      {
+        path: 'campaigns',
+        element: <AdminCampaigns />,
+      },
+      {
+        path: 'inquiries',
+        element: <AdminInquiries />,
+      },
+      {
+        path: 'supports',
+        element: <AdminSupports />,
       },
     ],
   },
