@@ -104,6 +104,7 @@ export interface AdminDashboardData {
 }
 
 export async function fetchAdminDashboard(): Promise<AdminDashboardData | null> {
+  const ADMIN_TOKEN_KEY = 'adminAuthToken';
   try {
     const token = getAdminToken();
     const headers: Record<string, string> = {
@@ -111,7 +112,26 @@ export async function fetchAdminDashboard(): Promise<AdminDashboardData | null> 
     };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    const res = await fetch(`${API_BASE_URL}/admin/dashboard`, { headers });
+    let res = await fetch(`${API_BASE_URL}/admin/dashboard`, { headers });
+    if (res.status === 401) {
+      try {
+        const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          const newToken = data.token || data.accessToken;
+          if (newToken) {
+            localStorage.setItem(ADMIN_TOKEN_KEY, newToken);
+            headers.Authorization = `Bearer ${newToken}`;
+            res = await fetch(`${API_BASE_URL}/admin/dashboard`, { headers });
+          }
+        }
+      } catch {
+        // refresh failed
+      }
+    }
     if (!res.ok) return null;
     return await res.json();
   } catch {

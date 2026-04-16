@@ -1,9 +1,20 @@
 import { useNavigate, useLocation } from 'react-router';
-import { LayoutDashboard, LogOut } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Users,
+  Megaphone,
+  MessageSquare,
+  HandHeart,
+  LogOut,
+} from 'lucide-react';
 import { adminLogout } from '../services/adminAuth';
 
 const navItems = [
   { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+  { label: 'Users', path: '/admin/users', icon: Users },
+  { label: 'Campaigns', path: '/admin/campaigns', icon: Megaphone },
+  { label: 'Inquiries', path: '/admin/inquiries', icon: MessageSquare },
+  { label: 'Supports', path: '/admin/supports', icon: HandHeart },
 ];
 
 export function AdminSidebar() {

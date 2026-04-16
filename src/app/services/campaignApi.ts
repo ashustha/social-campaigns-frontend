@@ -173,7 +173,7 @@ const LIST_CAMPAIGN_ENDPOINTS = [
   `${API_BASE_URL}/campaigns/campaigns`,
   `${API_BASE_URL}/campaigns`,
 ];
-const MY_CAMPAIGNS_ENDPOINT = `${API_BASE_URL}/campaigns/my-campaigns`;
+const MY_CAMPAIGNS_ENDPOINT = `${API_BASE_URL}/user/my-campaigns`;
 const CAMPAIGNS_ENDPOINT = `${API_BASE_URL}/campaigns`;
 const DEFAULT_CAMPAIGN_IMAGE = '/uploads/default-campaign.svg';
 let activeRefreshRequest: Promise<string | null> | null = null;
