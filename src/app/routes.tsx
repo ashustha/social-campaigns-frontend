@@ -4,6 +4,10 @@ import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { DashboardPage } from './components/DashboardPage';
 import { NewCampaignPage } from './components/NewCampaignPage';
+import { AdminLogin } from './admin/pages/AdminLogin';
+import { AdminDashboard } from './admin/pages/AdminDashboard';
+import { AdminLayout } from './admin/layout/AdminLayout';
+import { AdminRoute } from './admin/routes/AdminRoute';
 
 export const router = createBrowserRouter([
   {
@@ -25,6 +29,24 @@ export const router = createBrowserRouter([
   {
     path: '/register',
     element: <RegisterPage />,
+  },
+  {
+    path: '/admin/login',
+    element: <AdminLogin />,
+  },
+  {
+    path: '/admin',
+    element: (
+      <AdminRoute>
+        <AdminLayout />
+      </AdminRoute>
+    ),
+    children: [
+      {
+        path: 'dashboard',
+        element: <AdminDashboard />,
+      },
+    ],
   },
   {
     path: '*',
