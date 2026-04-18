@@ -1,5 +1,6 @@
 import { X, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 interface CreateCampaignWizardProps {
   onClose: () => void;
@@ -10,9 +11,11 @@ export function CreateCampaignWizard({
   onClose,
   onSubmit,
 }: CreateCampaignWizardProps) {
+  const { user } = useAuth();
+  const userCampaignType = user?.role === 'business' ? 'business' : 'cause';
   const [formData, setFormData] = useState({
     title: '',
-    type: 'cause',
+    type: userCampaignType,
     category: '',
     description: '',
     location: '',
@@ -112,18 +115,19 @@ export function CreateCampaignWizard({
                 htmlFor="type"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Campaign Type *
+                Campaign Type
               </label>
-              <select
+              <input
                 id="type"
-                value={formData.type}
-                onChange={(e) => handleInputChange('type', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              >
-                <option value="cause">Social Cause</option>
-                <option value="business">Small Business</option>
-              </select>
+                type="text"
+                value={
+                  userCampaignType === 'business'
+                    ? 'Small Business'
+                    : 'Social Cause'
+                }
+                disabled
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-gray-100 text-gray-600 cursor-not-allowed"
+              />
             </div>
 
             <div>
