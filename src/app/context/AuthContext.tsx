@@ -6,10 +6,14 @@ import {
   useEffect,
 } from 'react';
 
+const API_BASE_URL =
+  (import.meta as any).env?.VITE_API_BASE_URL ?? 'http://localhost:3000/api';
+
 interface User {
   id: string;
   email: string;
   name: string;
+  role: string;
 }
 
 interface AuthContextType {
@@ -23,6 +27,8 @@ interface AuthContextType {
     email: string,
     password: string,
     name: string,
+    role: string,
+    businessDetails?: { abn: string; phone: string; address: string },
   ) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -78,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
   ): Promise<{ success: boolean; message?: string }> => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,8 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Unexpected response format:', text.substring(0, 200));
         return {
           success: false,
-          message:
-            'Server error: Invalid response format. Is the backend API running at http://localhost:3000?',
+          message: `Server error: Invalid response format. Is the backend API running at ${API_BASE_URL}?`,
         };
       }
 
@@ -118,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: data.id || '1',
         email: data.email || email,
         name: data.name || email.split('@')[0],
+        role: data.role || 'user',
       };
 
       // Store token and user data in localStorage
@@ -136,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Login error:', errorMessage);
       return {
         success: false,
-        message: `Connection error: ${errorMessage}. Make sure the backend API is running at http://localhost:3000`,
+        message: `Connection error: ${errorMessage}. Make sure the backend API is running at ${API_BASE_URL}`,
       };
     }
   };
@@ -145,9 +151,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     name: string,
+    role: string,
+    businessDetails?: { abn: string; phone: string; address: string },
   ): Promise<{ success: boolean; message?: string }> => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,6 +164,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name,
           email,
           password,
+          role,
+          ...(businessDetails && {
+            abn: businessDetails.abn,
+            phone: businessDetails.phone,
+            address: businessDetails.address,
+          }),
         }),
       });
 
@@ -169,8 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Unexpected response format:', text.substring(0, 200));
         return {
           success: false,
-          message:
-            'Server error: Invalid response format. Is the backend API running at http://localhost:3000?',
+          message: `Server error: Invalid response format. Is the backend API running at ${API_BASE_URL}?`,
         };
       }
 
@@ -189,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Registration error:', errorMessage);
       return {
         success: false,
-        message: `Connection error: ${errorMessage}. Make sure the backend API is running at http://localhost:3000`,
+        message: `Connection error: ${errorMessage}. Make sure the backend API is running at ${API_BASE_URL}`,
       };
     }
   };

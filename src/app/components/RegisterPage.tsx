@@ -1,7 +1,18 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router';
-import { Mail, Lock, User, UserPlus, Check, X } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  User,
+  UserPlus,
+  Check,
+  X,
+  ChevronDown,
+  Phone,
+  MapPin,
+  Hash,
+} from 'lucide-react';
 import { toast } from '../utils/toast';
 import Header from './Header';
 
@@ -10,10 +21,18 @@ export function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('');
+  const [abn, setAbn] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [roleError, setRoleError] = useState('');
+  const [abnError, setAbnError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [addressError, setAddressError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -38,6 +57,10 @@ export function RegisterPage() {
     setEmailError('');
     setPasswordError('');
     setConfirmPasswordError('');
+    setRoleError('');
+    setAbnError('');
+    setPhoneError('');
+    setAddressError('');
 
     let hasFieldError = false;
     if (!name || !name.trim()) {
@@ -67,12 +90,38 @@ export function RegisterPage() {
       hasFieldError = true;
     }
 
+    if (!role) {
+      setRoleError('Please select an account type');
+      hasFieldError = true;
+    }
+
+    if (role === 'business') {
+      if (!abn || !/^\d{11}$/.test(abn)) {
+        setAbnError('Please enter a valid 11-digit ABN');
+        hasFieldError = true;
+      }
+      if (!phone || !phone.trim()) {
+        setPhoneError('Please enter a phone number');
+        hasFieldError = true;
+      }
+      if (!address || !address.trim()) {
+        setAddressError('Please enter a business address');
+        hasFieldError = true;
+      }
+    }
+
     if (hasFieldError) return;
 
     setLoading(true);
 
     try {
-      const result = await register(email, password, name);
+      const result = await register(
+        email,
+        password,
+        name,
+        role,
+        role === 'business' ? { abn, phone, address } : undefined,
+      );
       if (result.success) {
         toast.success(
           'Registration Successful!',
@@ -115,6 +164,153 @@ export function RegisterPage() {
             </div>
 
             <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              <div>
+                <label
+                  htmlFor="role"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Account Type
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="size-5 text-gray-400" />
+                  </div>
+                  <select
+                    id="role"
+                    value={role}
+                    onChange={(e) => {
+                      setRole(e.target.value);
+                      setRoleError('');
+                    }}
+                    className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:border-transparent appearance-none bg-white ${
+                      roleError
+                        ? 'border-red-600 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-purple-500'
+                    }`}
+                    required
+                  >
+                    <option value="" disabled>
+                      Select account type
+                    </option>
+                    <option value="user">Individual</option>
+                    <option value="business">Small Business</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <ChevronDown className="size-5 text-gray-400" />
+                  </div>
+                </div>
+                {roleError && (
+                  <p className="mt-2 text-sm text-red-600">{roleError}</p>
+                )}
+              </div>
+
+              {role === 'business' && (
+                <>
+                  <div>
+                    <label
+                      htmlFor="abn"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      ABN (Australian Business Number)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Hash className="size-5 text-gray-400" />
+                      </div>
+                      <input
+                        id="abn"
+                        type="text"
+                        value={abn}
+                        onChange={(e) => {
+                          setAbn(
+                            e.target.value.replace(/\D/g, '').slice(0, 11),
+                          );
+                          setAbnError('');
+                        }}
+                        className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+                          abnError
+                            ? 'border-red-600 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-purple-500'
+                        }`}
+                        placeholder="12345678901"
+                        required
+                      />
+                    </div>
+                    {abnError && (
+                      <p className="mt-2 text-sm text-red-600">{abnError}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="phone"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Phone Number
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Phone className="size-5 text-gray-400" />
+                      </div>
+                      <input
+                        id="phone"
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value);
+                          setPhoneError('');
+                        }}
+                        className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+                          phoneError
+                            ? 'border-red-600 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-purple-500'
+                        }`}
+                        placeholder="0412 345 678"
+                        required
+                      />
+                    </div>
+                    {phoneError && (
+                      <p className="mt-2 text-sm text-red-600">{phoneError}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="address"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Business Address
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <MapPin className="size-5 text-gray-400" />
+                      </div>
+                      <input
+                        id="address"
+                        type="text"
+                        value={address}
+                        onChange={(e) => {
+                          setAddress(e.target.value);
+                          setAddressError('');
+                        }}
+                        className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+                          addressError
+                            ? 'border-red-600 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-purple-500'
+                        }`}
+                        placeholder="123 Main St, Melbourne VIC 3000"
+                        required
+                      />
+                    </div>
+                    {addressError && (
+                      <p className="mt-2 text-sm text-red-600">
+                        {addressError}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+
               <div>
                 <label
                   htmlFor="name"

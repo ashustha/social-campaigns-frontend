@@ -9,6 +9,7 @@ import {
   type CreateCampaignInput,
 } from '../services/campaignApi';
 import { toast } from '../utils/toast';
+import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_CAMPAIGN_IMAGE = '/uploads/default-campaign.svg';
 
@@ -160,10 +161,14 @@ function getInputClassName(hasError: boolean) {
 
 export function NewCampaignPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const userCampaignType: CampaignType =
+    user?.role === 'business' ? 'business' : 'cause';
   const todayDate = formatDateForInput(new Date());
-  const [formData, setFormData] = useState<CreateCampaignInput>(
-    createInitialFormData,
-  );
+  const [formData, setFormData] = useState<CreateCampaignInput>(() => ({
+    ...createInitialFormData(),
+    type: userCampaignType,
+  }));
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -450,24 +455,19 @@ export function NewCampaignPage() {
                   htmlFor="campaign-type"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Campaign Type *
+                  Campaign Type
                 </label>
-                <select
+                <input
                   id="campaign-type"
-                  value={formData.type}
-                  onChange={(e) =>
-                    handleInputChange('type', e.target.value as CampaignType)
+                  type="text"
+                  value={
+                    userCampaignType === 'business'
+                      ? 'Small Business'
+                      : 'Social Cause'
                   }
-                  onBlur={() => markFieldTouched('type')}
-                  aria-invalid={Boolean(getFieldError('type'))}
-                  className={getInputClassName(Boolean(getFieldError('type')))}
-                >
-                  {CAMPAIGN_TYPE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  disabled
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-gray-600 cursor-not-allowed"
+                />
               </div>
 
               <div>
