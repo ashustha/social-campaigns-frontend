@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ChevronDown,
   User,
+  Eye,
 } from 'lucide-react';
 import Header from './Header';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -144,20 +145,23 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center gap-3 mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">My Campaigns</h2>
-            <p className="text-gray-600 mt-1">
+            <h2 className="text-xl sm:text-3xl font-bold text-gray-900">
+              My Campaigns
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
               You have {campaigns.length} campaign
               {campaigns.length !== 1 ? 's' : ''}
             </p>
           </div>
           <button
             onClick={onCreateCampaign}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            className="flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm sm:text-base shrink-0"
           >
-            <Plus className="size-5" />
-            Create New Campaign
+            <Plus className="size-4 sm:size-5" />
+            <span className="hidden sm:inline">Create New Campaign</span>
+            <span className="sm:hidden">New</span>
           </button>
         </div>
 
@@ -191,11 +195,12 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
             {campaigns.map((campaign) => (
               <div
                 key={campaign.id}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => navigate(`/campaign/${campaign.id}`)}
               >
-                <div className="flex flex-col md:flex-row">
+                <div className="flex flex-col lg:flex-row">
                   {/* Campaign Image */}
-                  <div className="relative w-full md:w-64 h-48 flex-shrink-0">
+                  <div className="relative w-full lg:w-64 h-48 flex-shrink-0">
                     <ImageWithFallback
                       src={campaign.image}
                       alt={campaign.title}
@@ -217,18 +222,18 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
                   </div>
 
                   {/* Campaign Info */}
-                  <div className="flex-1 p-6">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                  <div className="flex-1 p-4 sm:p-6">
+                    <div className="flex justify-between items-start mb-3 gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-1 truncate">
                           {campaign.title}
                         </h3>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm text-gray-500">
                             {campaign.category}
                           </span>
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                            className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getStatusColor(
                               campaign.status,
                             )}`}
                           >
@@ -236,13 +241,26 @@ export function UserDashboard({ onCreateCampaign }: UserDashboardProps) {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 shrink-0">
                         <button
-                          onClick={() => handleDelete(campaign.id)}
-                          className="flex items-center gap-1 px-3 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/campaign/${campaign.id}`);
+                          }}
+                          className="flex items-center gap-1 px-2 sm:px-3 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-sm"
+                        >
+                          <Eye className="size-4" />
+                          <span className="hidden sm:inline">View</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(campaign.id);
+                          }}
+                          className="flex items-center gap-1 px-2 sm:px-3 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors text-sm"
                         >
                           <Trash2 className="size-4" />
-                          Delete
+                          <span className="hidden sm:inline">Delete</span>
                         </button>
                       </div>
                     </div>

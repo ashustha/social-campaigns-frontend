@@ -14,10 +14,11 @@
    - 4.1 [Hero Section](#41-hero-section)
    - 4.2 [Campaign Filters](#42-campaign-filters)
    - 4.3 [Campaign Cards](#43-campaign-cards)
-   - 4.4 [Loading & Empty States](#44-loading--empty-states)
-5. [Campaign Details](#5-campaign-details)
-   - 5.1 [Opening Campaign Details](#51-opening-campaign-details)
-   - 5.2 [Detail Modal Layout](#52-detail-modal-layout)
+   - 4.4 [Pagination](#44-pagination)
+   - 4.5 [Loading & Empty States](#45-loading--empty-states)
+5. [Campaign Detail Page](#5-campaign-detail-page)
+   - 5.1 [Opening a Campaign](#51-opening-a-campaign)
+   - 5.2 [Page Layout](#52-page-layout)
    - 5.3 [Sharing Campaigns](#53-sharing-campaigns)
 6. [Voting on Campaigns](#6-voting-on-campaigns)
    - 6.1 [How Voting Works](#61-how-voting-works)
@@ -48,15 +49,18 @@
     - 12.3 [Returning User — Inquiring About a Business](#123-returning-user--inquiring-about-a-business)
 13. [API Reference (User Endpoints)](#13-api-reference-user-endpoints)
 14. [Technical Architecture](#14-technical-architecture)
-15. [Responsive Design & Layout](#15-responsive-design--layout)
-16. [Troubleshooting](#16-troubleshooting)
-17. [FAQ](#17-faq)
+15. [Deployment](#15-deployment)
+16. [Responsive Design & Layout](#16-responsive-design--layout)
+17. [Troubleshooting](#17-troubleshooting)
+18. [FAQ](#18-faq)
 
 ---
 
 ## 1. Overview
 
-The **Social Awareness Platform** is a web application that connects communities across Australia. It allows users to:
+The **Social Awareness Platform** is a web application that connects communities across Australia.
+
+**Repository:** https://github.com/ashustha/social-campaigns-frontend It allows users to:
 
 - **Browse** active campaigns for social causes and small businesses
 - **Vote** on campaigns (upvote or downvote) to express support
@@ -76,9 +80,8 @@ The platform covers communities in **Melbourne, Sydney, Brisbane, Adelaide, and 
 
 Open your browser and navigate to:
 
-```
-http://localhost:5173/
-```
+- **Local development:** `http://localhost:5173/`
+- **Production (Netlify):** Your deployed Netlify URL
 
 The home page is accessible to everyone — no login required to browse campaigns. However, you must be logged in to:
 
@@ -94,12 +97,32 @@ The home page is accessible to everyone — no login required to browse campaign
 2. On the login page, click the **"Register here"** link at the bottom.
 3. Fill in the registration form:
 
-| Field            | Requirements                                        |
-| ---------------- | --------------------------------------------------- |
-| Full Name        | Required. Cannot be empty.                          |
-| Email Address    | Required. Must be a valid email format.             |
-| Password         | Required. Must meet all password rules (see below). |
-| Confirm Password | Required. Must exactly match the password field.    |
+| Field            | Requirements                                                         |
+| ---------------- | -------------------------------------------------------------------- |
+| Account Type     | Required. Select **Individual** or **Small Business** from dropdown. |
+| Full Name        | Required. Cannot be empty.                                           |
+| Email Address    | Required. Must be a valid email format.                              |
+| Password         | Required. Must meet all password rules (see below).                  |
+| Confirm Password | Required. Must exactly match the password field.                     |
+
+#### Account Types
+
+| Selection      | Saved as in DB | Description                                    |
+| -------------- | -------------- | ---------------------------------------------- |
+| Individual     | `user`         | Personal accounts for social cause campaigns   |
+| Small Business | `business`     | Business accounts — requires additional fields |
+
+#### Business Registration Fields
+
+When **Small Business** is selected as account type, three additional required fields appear:
+
+| Field            | Requirements                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| ABN              | Required. Must be exactly 11 digits (Australian Business Number). Only numeric input is accepted. |
+| Phone Number     | Required. Contact phone number for the business.                                                  |
+| Business Address | Required. Physical address of the business.                                                       |
+| Password         | Required. Must meet all password rules (see below).                                               |
+| Confirm Password | Required. Must exactly match the password field.                                                  |
 
 #### Password Rules
 
@@ -171,15 +194,18 @@ The header appears at the top of every page and provides:
 
 **Available Routes:**
 
-| Path            | Page              | Auth Required? |
-| --------------- | ----------------- | -------------- |
-| `/`             | Home Page         | No             |
-| `/login`        | Login Page        | No             |
-| `/register`     | Registration Page | No             |
-| `/dashboard`    | User Dashboard    | Yes            |
-| `/campaign/new` | Create Campaign   | Yes            |
+| Path            | Page              | Auth Required?      |
+| --------------- | ----------------- | ------------------- |
+| `/`             | Home Page         | No                  |
+| `/login`        | Login Page        | No                  |
+| `/register`     | Registration Page | No                  |
+| `/dashboard`    | User Dashboard    | Yes (user/business) |
+| `/campaign/new` | Create Campaign   | Yes (user/business) |
+| `/campaign/:id` | Campaign Detail   | Yes                 |
 
 If you try to access a protected page without logging in, you will be redirected to the **Login** page.
+
+> **Note:** Admin accounts cannot log in through the user portal. If you try to sign in with an admin account at `/login`, you will see the message: _"Admin accounts must use the admin portal."_ Please use `/admin/login` instead.
 
 ---
 
@@ -247,9 +273,24 @@ Each campaign is displayed as a card in a responsive grid:
 | Supporters Count | Number of supporters with a user icon                                 |
 | Date Range       | Start date — End date (or just start date if no end date)             |
 | Vote Buttons     | Upvote (▲) and Downvote (▼) with counts                               |
-| Read More        | Button to open the full campaign detail modal                         |
+| Read More        | Button to navigate to the full campaign detail page                   |
 
-### 4.4 Loading & Empty States
+Clicking **"Read More"** navigates to `/campaign/:id` — a dedicated full-page view for that campaign.
+
+> **Note:** You must be logged in to view campaign details. If you are not logged in and click "Read More", you will be prompted to log in first.
+
+### 4.4 Pagination
+
+The home page displays a maximum of **12 campaign cards per page**. When there are more than 12 campaigns matching your current filters, a pagination bar appears below the campaign grid:
+
+- **Previous** and **Next** buttons to move between pages.
+- **Numbered page buttons** to jump directly to any page.
+- The active page number is highlighted in blue.
+- Previous is disabled on page 1; Next is disabled on the last page.
+
+**Pagination resets to page 1 automatically** whenever you change a filter (type or location).
+
+### 4.5 Loading & Empty States
 
 - **Loading:** While campaigns are being fetched, 6 skeleton placeholder cards are shown with a pulsing animation.
 - **Empty state:** If no campaigns match your filters, the message **"No campaigns found matching your filters."** is displayed.
@@ -257,43 +298,87 @@ Each campaign is displayed as a card in a responsive grid:
 
 ---
 
-## 5. Campaign Details
+## 5. Campaign Detail Page
 
-### 5.1 Opening Campaign Details
+**Route:** `/campaign/:id`
 
-Click the **"Read More"** button on any campaign card to open the detail modal.
+### 5.1 Opening a Campaign
 
-> **Note:** You must be logged in to view campaign details. If you are not logged in, you will be prompted to log in first.
+Click the **"Read More"** button on any campaign card. You will be navigated to a dedicated full-page view for that campaign at `/campaign/:id`.
 
-### 5.2 Detail Modal Layout
+> **Note:** You must be logged in to access campaign details. If not logged in, you will be redirected to the Login page.
 
-The campaign detail modal opens as a full overlay and includes:
+Use your browser's **Back** button or the **← Back** link in the header to return to the home page.
 
-| Section           | Description                                                          |
-| ----------------- | -------------------------------------------------------------------- |
-| **Header Image**  | Large campaign image or embedded video (if a video URL was provided) |
-| **Title**         | Full campaign title                                                  |
-| **Status Badge**  | Current campaign status (Active, Pending, etc.)                      |
-| **Category**      | Campaign category                                                    |
-| **Campaign Type** | Social Cause or Small Business                                       |
-| **Location**      | Campaign location                                                    |
-| **Contact Email** | Campaign creator's contact email                                     |
-| **Date Range**    | Start date and end date                                              |
-| **Description**   | Full campaign description text                                       |
-| **Goals**         | Listed as bullet points                                              |
-| **Supporters**    | Total supporter count                                                |
+### 5.2 Page Layout
 
-**Fixed Sidebar (right side):**
+The campaign detail page displays all information about the selected campaign:
 
-| Element       | Description                                                |
-| ------------- | ---------------------------------------------------------- |
-| Vote Buttons  | Upvote and Downvote buttons with current counts            |
-| Share Buttons | Social media sharing (Facebook, Twitter, LinkedIn)         |
-| CTA Button    | "Support This Cause" (causes) or "Learn More" (businesses) |
+| Section           | Description                                                         |
+| ----------------- | ------------------------------------------------------------------- |
+| **Header Image**  | Large campaign image, or embedded video if a video URL was provided |
+| **Title**         | Full campaign title                                                 |
+| **Status Badge**  | Current campaign status (Active, Pending, etc.)                     |
+| **Category**      | Campaign category                                                   |
+| **Campaign Type** | Social Cause or Small Business                                      |
+| **Location**      | Campaign location                                                   |
+| **Contact Email** | Campaign creator's contact email                                    |
+| **Date Range**    | Start date and end date                                             |
+| **Description**   | Full campaign description text                                      |
+| **Goals**         | Listed as bullet points                                             |
+| **Supporters**    | Total supporter count                                               |
 
-### 5.3 Sharing Campaigns
+**Desktop (1024px+) — Fixed Sidebar (right side):**
 
-From the campaign detail modal, you can share to three social platforms:
+On large screens, a sticky sidebar is shown alongside the content:
+
+| Element      | Description                                                |
+| ------------ | ---------------------------------------------------------- |
+| Vote Buttons | Upvote and Downvote buttons with current counts            |
+| Share Button | Opens a share menu for social media sharing                |
+| CTA Button   | "Support This Cause" (causes) or "Learn More" (businesses) |
+
+**Mobile & Tablet (below 1024px) — Fixed Bottom Bar:**
+
+On mobile and tablet screens, the sidebar is replaced by a fixed bar anchored to the bottom of the screen:
+
+| Element      | Description                             |
+| ------------ | --------------------------------------- |
+| Vote Buttons | Upvote and Downvote with current counts |
+| Share Icon   | Opens the share menu                    |
+
+This ensures the vote and share actions are always reachable without scrolling on smaller screens.
+
+> **Note for campaign owners:** If you are the creator of the campaign, the **"Support This Cause" / "Learn More"** button is hidden — you cannot support or inquire about your own campaign.
+
+### 5.3 Owner Activity Panel
+
+If you are the **owner** of the campaign you are viewing, an additional **Owner View** panel appears below the campaign details. This panel is only visible to you and shows the activity your campaign has received:
+
+| Campaign Type  | Panel Contents                                                                         |
+| -------------- | -------------------------------------------------------------------------------------- |
+| Social Cause   | **Supporters** — a list of users who have financially supported your campaign          |
+| Small Business | **Inquiries** — a list of users who submitted an inquiry through the "Learn More" form |
+
+**Supporter entries show:**
+
+- Supporter's name and email
+- Dollar amount contributed
+- Optional message left by the supporter
+- Submission date
+
+**Inquiry entries show:**
+
+- Inquirer's name and email
+- Phone number
+- Message
+- Submission date
+
+If no activity has been recorded yet, an empty state message is shown (e.g. "No supporters yet.").
+
+### 5.4 Sharing Campaigns
+
+Click the **Share** button (or icon) to open the sharing options. You can share to three platforms:
 
 | Platform | What happens                                    |
 | -------- | ----------------------------------------------- |
@@ -301,9 +386,7 @@ From the campaign detail modal, you can share to three social platforms:
 | Twitter  | Opens a new window with a pre-filled tweet      |
 | LinkedIn | Opens a new window with a LinkedIn share dialog |
 
-Each share includes the campaign title and a link to the platform.
-
-**To close the modal:** Click the **X** button in the top-right corner, or click outside the modal area.
+Each share includes the campaign title and a direct link to the campaign detail page.
 
 ---
 
@@ -436,18 +519,20 @@ There are three ways to access the campaign creation form:
 
 The campaign creation page has a full-page layout with the form on the right and a live preview on the left.
 
-| Field          | Type     | Required? | Default Value          | Placeholder / Options                                         |
-| -------------- | -------- | --------- | ---------------------- | ------------------------------------------------------------- |
-| Campaign Title | Text     | **Yes**   | Empty                  | —                                                             |
-| Category       | Text     | **Yes**   | Empty                  | "Environment, Education, Health..."                           |
-| Campaign Type  | Dropdown | **Yes**   | `cause` (Social Cause) | Social Cause / Small Business                                 |
-| Location       | Dropdown | **Yes**   | Empty (Select a state) | See location options below                                    |
-| Start Date     | Date     | **Yes**   | Today's date           | —                                                             |
-| End Date       | Date     | **Yes**   | Today + 30 days        | —                                                             |
-| Contact Email  | Email    | **Yes**   | Empty                  | —                                                             |
-| Image          | File     | No        | None                   | Accepted: JPG, JPEG, PNG                                      |
-| Description    | Textarea | **Yes**   | Empty                  | "Explain what you are raising support for and why it matters" |
-| Goals          | Textarea | **Yes**   | Empty                  | "List the concrete outcomes this campaign should achieve"     |
+| Field          | Type     | Required? | Default Value          | Placeholder / Options                                               |
+| -------------- | -------- | --------- | ---------------------- | ------------------------------------------------------------------- |
+| Campaign Title | Text     | **Yes**   | Empty                  | —                                                                   |
+| Category       | Text     | **Yes**   | Empty                  | "Environment, Education, Health..."                                 |
+| Campaign Type  | Display  | Auto-set  | Based on user role     | Auto-assigned: Individual → Social Cause, Business → Small Business |
+| Location       | Dropdown | **Yes**   | Empty (Select a state) | See location options below                                          |
+| Start Date     | Date     | **Yes**   | Today's date           | —                                                                   |
+| End Date       | Date     | **Yes**   | Today + 30 days        | —                                                                   |
+| Contact Email  | Email    | **Yes**   | Empty                  | —                                                                   |
+| Image          | File     | No        | None                   | Accepted: JPG, JPEG, PNG                                            |
+| Description    | Textarea | **Yes**   | Empty                  | "Explain what you are raising support for and why it matters"       |
+| Goals          | Textarea | **Yes**   | Empty                  | "List the concrete outcomes this campaign should achieve"           |
+
+> **Note:** The **Campaign Type** is automatically determined by your account type and cannot be changed. Individual users can only create Social Cause campaigns, and Business users can only create Small Business campaigns.
 
 #### Location Options
 
@@ -463,12 +548,14 @@ The campaign creation page has a full-page layout with the form on the right and
 | NT    | Northern Territory           |
 | Other | Other / Online               |
 
-#### Campaign Type Options
+#### Campaign Type (Auto-Assigned)
 
-| Value    | Display Name   |
-| -------- | -------------- |
-| cause    | Social Cause   |
-| business | Small Business |
+| Account Type      | Campaign Type | Display Name   |
+| ----------------- | ------------- | -------------- |
+| Individual (user) | `cause`       | Social Cause   |
+| Business          | `business`    | Small Business |
+
+The campaign type field is displayed as a **read-only** input — users cannot change it.
 
 ### 9.3 Image Upload
 
@@ -493,11 +580,16 @@ The campaign creation page has a full-page layout with the form on the right and
 
 ### 9.5 Live Preview
 
-As you fill in the form, a **live preview card** on the left side of the page updates in real-time:
+On **desktop screens (large breakpoint and above)**, the campaign creation page uses a two-column layout:
 
-- The preview mimics the appearance of a campaign card on the home page.
-- It shows your title, description, category, campaign type badge, image (once uploaded), date range, and location.
-- This lets you see exactly how your campaign will appear to other users before publishing.
+- **Left column:** A live preview card that updates in real-time as you fill in the form.
+- **Right column:** The full creation form.
+
+The live preview mimics exactly how your campaign card will appear on the home page — including title, description, category badge, campaign type badge, image, date range, and location.
+
+> **Note:** The live preview panel is **not shown on mobile or tablet screens** to maximise the space available for the form. The form takes up the full screen width on smaller devices.
+
+This lets desktop users see exactly how their campaign will appear before publishing.
 
 ### 9.6 Validation Rules
 
@@ -590,7 +682,7 @@ If you haven't created any campaigns yet, an **empty state** is shown with a mes
 
 ## 11. Notifications & Toasts
 
-The platform uses toast notifications (pop-up messages in the top-right corner) to provide feedback. Toasts automatically disappear after a few seconds.
+The platform uses toast notifications (pop-up messages in the top-right corner) to provide feedback. Toasts automatically disappear after a few seconds. You can also dismiss any toast immediately by clicking the **✕ close button** on the notification.
 
 | Toast Type | Color  | Used For                                                        |
 | ---------- | ------ | --------------------------------------------------------------- |
@@ -606,48 +698,59 @@ The platform uses toast notifications (pop-up messages in the top-right corner) 
 ### 12.1 New User — From Registration to First Campaign
 
 ```
-1. Visit http://localhost:5173/
+1. Visit the platform URL
 2. Click "Login" → Click "Register here"
-3. Fill in: Full Name, Email, Password (meeting all rules), Confirm Password
-4. Click "Create Account" → See success toast
-5. Redirected to Login page → Enter Email + Password → Click "Sign In"
-6. Redirected to Home page (now logged in)
-7. Click "Create Campaign" in the hero section
-8. Fill in all required fields + optional image
-9. Preview your campaign in real-time on the left
-10. Click "Publish Campaign" → See success toast
-11. Redirected to Dashboard → Your new campaign appears with "Pending" status
-12. Wait for an admin to review and activate your campaign
-13. Once activated, your campaign appears on the home page for all users
+3. Select Account Type: "Individual" or "Small Business"
+   - If Small Business: fill in ABN, Phone, and Business Address
+4. Fill in: Full Name, Email, Password (meeting all rules), Confirm Password
+5. Click "Create Account" → See success toast
+6. Redirected to Login page → Enter Email + Password → Click "Sign In"
+7. Redirected to Home page (now logged in)
+8. Click "Create Campaign" in the hero section
+9. Campaign Type is auto-set based on your account type (cannot be changed)
+10. Fill in all remaining required fields + optional image
+11. On desktop: preview your campaign in real-time in the left column
+12. Click "Publish Campaign" → See success toast
+13. Redirected to Dashboard → Your new campaign appears with "Pending" status
+14. Wait for an admin to review and activate your campaign
+15. Once activated, your campaign appears on the home page for all users
 ```
 
 ### 12.2 Returning User — Supporting a Cause
 
 ```
-1. Visit http://localhost:5173/ → Log in if needed
+1. Visit the platform → Log in if needed
 2. Browse campaigns or use filters (e.g., "Social Causes" + "Melbourne")
-3. Find a social cause campaign → Click "Read More"
-4. Review the full campaign details, goals, and description
-5. Click "Support This Cause"
-6. Your name and email are pre-filled
-7. Enter an Amount (required) and optionally a Message
-8. Click Submit → See success toast
-9. Your support is recorded and visible to the campaign creator
+3. Use the pagination bar to browse additional pages if needed
+4. Find a social cause campaign → Click "Read More"
+5. You are navigated to the full campaign detail page (/campaign/:id)
+6. Review the full campaign details, goals, and description
+7. Click "Support This Cause" — button appears on desktop sidebar (≥1024px)
+   or in the campaign content area on tablet/mobile
+   (Note: this button is not shown if you are the campaign owner)
+8. Your name and email are pre-filled
+9. Enter an Amount (required) and optionally a Message
+10. Click Submit → See success toast
+11. Your support is recorded and visible to the campaign creator in their Owner View panel
 ```
 
 ### 12.3 Returning User — Inquiring About a Business
 
 ```
-1. Visit http://localhost:5173/ → Log in if needed
+1. Visit the platform → Log in if needed
 2. Filter by "Small Businesses" to narrow results
-3. Find a business campaign → Click "Read More"
-4. Review the business details and goals
-5. Click "Learn More"
-6. Your name and email are pre-filled
-7. Enter a valid Australian phone number (required)
-8. Optionally add a Message
-9. Click Submit → See success toast
-10. Your inquiry is sent to the business owner
+3. Use pagination to browse if there are more than 12 results
+4. Find a business campaign → Click "Read More"
+5. You are navigated to the full campaign detail page (/campaign/:id)
+6. Review the business details and goals
+7. Click "Learn More" — button appears on desktop sidebar (≥1024px)
+   or in the campaign content area on tablet/mobile
+   (Note: this button is not shown if you are the campaign owner)
+8. Your name and email are pre-filled
+9. Enter a valid Australian phone number (required)
+10. Optionally add a Message
+11. Click Submit → See success toast
+12. Your inquiry is sent to the business owner and visible in their Owner View panel
 ```
 
 ---
@@ -656,7 +759,14 @@ The platform uses toast notifications (pop-up messages in the top-right corner) 
 
 All authenticated endpoints require a valid JWT access token sent as `Authorization: Bearer <token>`.
 
-**Base URL:** `http://localhost:3000/api`
+**Base URL:**
+
+| Environment | URL                                                                   |
+| ----------- | --------------------------------------------------------------------- |
+| Local Dev   | `http://localhost:3000/api`                                           |
+| Production  | `https://social-awareness-campaigns-team5-project.up.railway.app/api` |
+
+The base URL is configured via the `VITE_API_BASE_URL` environment variable (see [Deployment](#deployment) section).
 
 ### Authentication
 
@@ -679,12 +789,17 @@ All authenticated endpoints require a valid JWT access token sent as `Authorizat
 
 ```json
 {
+  "message": "Login Successful",
   "token": "eyJhbGciOiJIUzI1NiIs...",
-  "id": "42",
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "id": 42,
   "email": "user@example.com",
-  "name": "John Doe"
+  "name": "John Doe",
+  "role": "user"
 }
 ```
+
+> The `role` field is used by the frontend to determine which campaign type the user can create.
 
 **Register request:**
 
@@ -692,18 +807,35 @@ All authenticated endpoints require a valid JWT access token sent as `Authorizat
 {
   "name": "John Doe",
   "email": "user@example.com",
-  "password": "MyPass123!"
+  "password": "MyPass123!",
+  "role": "user"
+}
+```
+
+**Register request (business account):**
+
+```json
+{
+  "name": "Jane's Bakery",
+  "email": "jane@bakery.com",
+  "password": "MyPass123!",
+  "role": "business",
+  "abn": "12345678901",
+  "phone": "0412345678",
+  "address": "123 Main St, Melbourne VIC 3000"
 }
 ```
 
 ### Campaigns
 
-| Method | Endpoint               | Description                  | Auth Required? |
-| ------ | ---------------------- | ---------------------------- | -------------- |
-| GET    | `/campaigns/campaigns` | List all active campaigns    | No             |
-| GET    | `/user/my-campaigns`   | List your own campaigns      | Yes            |
-| POST   | `/campaigns/create`    | Create a new campaign        | Yes            |
-| DELETE | `/campaigns/{id}`      | Delete one of your campaigns | Yes            |
+| Method | Endpoint                       | Description                      | Auth Required? |
+| ------ | ------------------------------ | -------------------------------- | -------------- |
+| GET    | `/campaigns/campaigns`         | List all active campaigns        | No             |
+| GET    | `/user/my-campaigns`           | List your own campaigns          | Yes            |
+| POST   | `/campaigns/create`            | Create a new campaign            | Yes            |
+| DELETE | `/campaigns/{id}`              | Delete one of your campaigns     | Yes            |
+| GET    | `/campaigns/{id}/my-supports`  | Get supporters for your campaign | Yes            |
+| GET    | `/campaigns/{id}/my-inquiries` | Get inquiries for your campaign  | Yes            |
 
 **Create campaign request (JSON):**
 
@@ -809,16 +941,16 @@ src/
 │   ├── App.tsx                      # Root component (AuthProvider + Router + Toasts)
 │   ├── routes.tsx                   # Route definitions
 │   ├── components/
-│   │   ├── HomePage.tsx             # Campaign browsing & filtering
+│   │   ├── HomePage.tsx             # Campaign browsing, filtering & pagination
 │   │   ├── LoginPage.tsx            # User login form
 │   │   ├── RegisterPage.tsx         # Account registration form
 │   │   ├── DashboardPage.tsx        # Dashboard route guard
 │   │   ├── UserDashboard.tsx        # Campaign management dashboard
-│   │   ├── NewCampaignPage.tsx      # Campaign creation form + live preview
-│   │   ├── CreateCampaignWizard.tsx # Compact campaign creation modal (alternative)
-│   │   ├── Header.tsx               # Navigation header
-│   │   ├── CampaignCard.tsx         # Campaign card component
-│   │   ├── CampaignDetailModal.tsx  # Full campaign detail overlay
+│   │   ├── NewCampaignPage.tsx      # Campaign creation form + desktop live preview
+│   │   ├── CreateCampaignWizard.tsx # Campaign creation form logic
+│   │   ├── CampaignDetailPage.tsx   # Full-page campaign detail (/campaign/:id)
+│   │   ├── Header.tsx               # Responsive navigation header
+│   │   ├── CampaignCard.tsx         # Campaign card (links to /campaign/:id)
 │   │   ├── AlertModal.tsx           # Simple alert popup
 │   │   └── ConfirmationModal.tsx    # Confirm/cancel dialog
 │   ├── context/
@@ -872,52 +1004,112 @@ on home)     user sees status
 
 ---
 
-## 15. Responsive Design & Layout
+## 15. Deployment
 
-The platform is fully responsive and adapts to different screen sizes:
+### Environment Variables
 
-| Screen Size | Breakpoint | Campaign Grid | Layout Notes                        |
-| ----------- | ---------- | ------------- | ----------------------------------- |
-| Mobile      | < 768px    | 1 column      | Stacked layout, full-width elements |
-| Tablet      | ≥ 768px    | 2 columns     | Side-by-side cards                  |
-| Desktop     | ≥ 1024px   | 3 columns     | Full three-column grid              |
+The API base URL is configured via environment variables. Vite automatically loads the correct file based on the build mode:
 
-**Campaign Creation Page:**
+| File               | Used When                | Value                                                                                   |
+| ------------------ | ------------------------ | --------------------------------------------------------------------------------------- |
+| `.env.development` | `npm run dev` (local)    | `VITE_API_BASE_URL=http://localhost:3000/api`                                           |
+| `.env.production`  | `npm run build` (deploy) | `VITE_API_BASE_URL=https://social-awareness-campaigns-team5-project.up.railway.app/api` |
 
-- On desktop: Two-column layout (preview on left, form on right).
-- On mobile: Single-column layout (form only, preview may stack above or below).
+### Netlify Deployment
 
-**Campaign Detail Modal:**
+The frontend is deployed on **Netlify**. Key configuration:
 
-- On desktop: Full modal with fixed sidebar for votes and sharing.
-- On mobile: Scrollable modal with sidebar content stacked below main content.
+- **Build command:** `npm run build`
+- **Publish directory:** `dist`
+- **SPA routing:** A `public/_redirects` file (`/* /index.html 200`) ensures all client-side routes (including `/admin/login`) work correctly on Netlify.
+- **Environment variable:** Set `VITE_API_BASE_URL` in Netlify's **Site settings → Environment variables** to point to the production backend.
 
----
+### Backend Deployment
 
-## 16. Troubleshooting
+The backend API is deployed on **Railway** at:
 
-| Problem                                        | Solution                                                                                                      |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| **Can't log in**                               | Check that your email and password are correct. Ensure the backend is running at `http://localhost:3000`.     |
-| **"Connection error" on login/register**       | The backend API server is not running. Start it on port 3000.                                                 |
-| **Redirected to login unexpectedly**           | Your session expired. The refresh token may have expired after 7 days of inactivity. Log in again.            |
-| **"Registration Successful!" but can't login** | Registration does not auto-login. You must sign in manually on the login page.                                |
-| **Password validation won't pass**             | Ensure your password has: 6+ chars, 1 uppercase, 1 number, 1 special character.                               |
-| **Campaigns not appearing on home page**       | Only **active** campaigns are shown. New campaigns start as **pending** and need admin approval.              |
-| **My campaign stuck on "Pending"**             | Contact the platform administrator to review and activate your campaign.                                      |
-| **Campaign image not loading**                 | Ensure the backend `/uploads` directory is accessible. Check that the image was JPG/PNG.                      |
-| **"Only JPG, JPEG, PNG images are allowed"**   | You tried uploading an unsupported format. Convert your image to JPG or PNG first.                            |
-| **Phone number rejected in inquiry form**      | Must be a valid Australian number: `0412345678` or `+61412345678`. No international numbers.                  |
-| **Vote buttons not responding**                | You must be logged in to vote. Check for login prompt.                                                        |
-| **Toast notifications not appearing**          | Try refreshing the page. Toast component may not have mounted correctly.                                      |
-| **Filters show no results**                    | Try resetting to "All Campaigns" and "All Locations" to confirm campaigns exist.                              |
-| **Dashboard shows no campaigns**               | You haven't created any campaigns yet, or they were deleted. Click "Create New Campaign."                     |
-| **Page shows a blank screen**                  | Check the browser console (F12) for JavaScript errors. Ensure all dependencies are installed (`npm install`). |
-| **Form won't submit**                          | Check all required fields. Look for red error messages below each field.                                      |
+```
+https://social-awareness-campaigns-team5-project.up.railway.app
+```
 
 ---
 
-## 17. FAQ
+## 16. Responsive Design & Layout
+
+The platform is fully responsive and adapts to different screen sizes using Tailwind CSS breakpoints.
+
+### Campaign Grid
+
+| Screen Size | Breakpoint | Columns | Cards per Page |
+| ----------- | ---------- | ------- | -------------- |
+| Mobile      | < 768px    | 1       | Up to 12       |
+| Tablet      | ≥ 768px    | 2       | Up to 12       |
+| Desktop     | ≥ 1024px   | 3       | Up to 12       |
+
+### Header (Navigation Bar)
+
+| Screen Size | Brand Name                     | Button Labels |
+| ----------- | ------------------------------ | ------------- |
+| Mobile      | "ACS" (abbreviated)            | Icons only    |
+| Desktop     | "Advanced Consulting Services" | Icons + text  |
+
+### Campaign Detail Page
+
+| Screen Size        | Votes & Share Actions | Layout        |
+| ------------------ | --------------------- | ------------- |
+| Mobile (< 1024px)  | Fixed bottom bar      | Single-column |
+| Tablet (< 1024px)  | Fixed bottom bar      | Single-column |
+| Desktop (≥ 1024px) | Sticky right sidebar  | Single-column |
+
+### Campaign Creation Page
+
+| Screen Size | Layout                                | Live Preview |
+| ----------- | ------------------------------------- | ------------ |
+| Mobile      | Single-column form                    | Hidden       |
+| Desktop     | Two-column (preview left, form right) | Visible      |
+
+### User Dashboard
+
+| Screen Size        | Campaign Card Layout | Heading Size | "New Campaign" Button |
+| ------------------ | -------------------- | ------------ | --------------------- |
+| Mobile/Tablet      | Stacked (image top)  | Smaller      | "New" with + icon     |
+| Desktop (≥ 1024px) | Side-by-side         | Full size    | "Create New Campaign" |
+
+### Campaign Filters (Home Page)
+
+| Screen Size | Layout                                                   |
+| ----------- | -------------------------------------------------------- |
+| Mobile      | Stacked rows (type buttons above, location select below) |
+| Desktop     | Single horizontal row                                    |
+
+---
+
+## 17. Troubleshooting
+
+| Problem                                             | Solution                                                                                                                    |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Can't log in**                                    | Check that your email and password are correct. Ensure the backend is running.                                              |
+| **"Connection error" on login/register**            | The backend API server is not running. Start it on port 3000.                                                               |
+| **Redirected to login unexpectedly**                | Your session expired. The refresh token may have expired after 7 days of inactivity. Log in again.                          |
+| **"Registration Successful!" but can't login**      | Registration does not auto-login. You must sign in manually on the login page.                                              |
+| **Password validation won't pass**                  | Ensure your password has: 6+ chars, 1 uppercase, 1 number, 1 special character.                                             |
+| **Campaigns not appearing on home page**            | Only **active** campaigns are shown. New campaigns start as **pending** and need admin approval.                            |
+| **My campaign stuck on "Pending"**                  | Contact the platform administrator to review and activate your campaign.                                                    |
+| **Campaign image not loading**                      | Ensure the backend `/uploads` directory is accessible. Check that the image was JPG/PNG.                                    |
+| **"Only JPG, JPEG, PNG images are allowed"**        | You tried uploading an unsupported format. Convert your image to JPG or PNG first.                                          |
+| **Phone number rejected in inquiry form**           | Must be a valid Australian number: `0412345678` or `+61412345678`. No international numbers.                                |
+| **Vote buttons not responding**                     | You must be logged in to vote. Check for login prompt.                                                                      |
+| **Toast notifications not appearing**               | Try refreshing the page. Toast component may not have mounted correctly.                                                    |
+| **Filters show no results**                         | Try resetting to "All" type and "All Locations" using "Clear Filters". Pagination resets automatically.                     |
+| **Dashboard shows no campaigns**                    | You haven't created any campaigns yet, or they were deleted. Click "Create New Campaign."                                   |
+| **Page shows a blank screen**                       | Check the browser console (F12) for JavaScript errors. Ensure all dependencies are installed (`npm install`).               |
+| **Form won't submit**                               | Check all required fields. Look for red error messages below each field.                                                    |
+| **Campaign detail page shows "Campaign not found"** | The campaign ID in the URL may be invalid, or the campaign was deleted.                                                     |
+| **Pagination buttons not appearing**                | There are 12 or fewer campaigns matching your current filters. Pagination only appears when there are more than 12 results. |
+
+---
+
+## 18. FAQ
 
 **Q: Do I need an account to browse campaigns?**
 A: No. The home page is publicly accessible. You can browse and filter campaigns without logging in. However, you need an account to view details, vote, support, inquire, or create campaigns.

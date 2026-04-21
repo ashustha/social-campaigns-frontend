@@ -58,6 +58,7 @@ export interface CampaignListItem {
   upvotes: number;
   downvotes: number;
   videoUrl?: string;
+  userId?: string;
 }
 
 export interface FetchCampaignsResponse {
@@ -427,6 +428,7 @@ function mapCampaignListItem(record: any): CampaignListItem {
     downvotes: Number(record?.downvotes) || 0,
     videoUrl:
       record?.video_url?.trim?.() || record?.videoUrl?.trim?.() || undefined,
+    userId: record?.user_id != null ? String(record.user_id) : undefined,
   };
 }
 
@@ -1003,5 +1005,200 @@ export async function inquiryCampaign(
       success: false,
       message: `Connection error: ${errorMessage}. The API is expected at ${CAMPAIGNS_ENDPOINT}/${campaignId}/inquiry`,
     };
+  }
+}
+
+export interface FetchCampaignByIdResponse {
+  success: boolean;
+  message: string;
+  data?: CampaignListItem;
+}
+
+export async function fetchCampaignById(
+  campaignId: string,
+): Promise<FetchCampaignByIdResponse> {
+  try {
+    const authToken = resolveStoredAuthToken();
+    const response = await authenticatedFetch(
+      `${CAMPAIGNS_ENDPOINT}/${encodeURIComponent(campaignId)}`,
+      {
+        method: 'GET',
+        headers: authToken
+          ? { Authorization: `Bearer ${authToken}` }
+          : undefined,
+      },
+    );
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      return {
+        success: false,
+        message: 'Campaign API returned an unexpected response format.',
+      };
+    }
+
+    const payload = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message:
+          payload?.message || payload?.error || 'Failed to fetch campaign.',
+      };
+    }
+
+    const record = payload?.data ?? payload?.campaign ?? payload;
+
+    return {
+      success: true,
+      message: 'Campaign loaded.',
+      data: mapCampaignListItem(record),
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'An unexpected error occurred';
+
+    return {
+      success: false,
+      message: `Connection error: ${errorMessage}.`,
+    };
+  }
+}
+
+// ─── Owner-only: Supporters & Inquiries ─────────────────────────────────────
+
+export interface CampaignSupportItem {
+  id: number | string;
+  name: string;
+  email: string;
+  message?: string;
+  amount: number | string;
+  created_at: string;
+}
+
+export interface CampaignInquiryItem {
+  id: number | string;
+  name: string;
+  email: string;
+  phone?: string;
+  message?: string;
+  created_at: string;
+}
+
+export interface FetchCampaignSupportersResponse {
+  success: boolean;
+  message: string;
+  data: CampaignSupportItem[];
+}
+
+export interface FetchCampaignInquiriesResponse {
+  success: boolean;
+  message: string;
+  data: CampaignInquiryItem[];
+}
+
+export async function fetchCampaignSupporters(
+  campaignId: string,
+): Promise<FetchCampaignSupportersResponse> {
+  const authToken = resolveStoredAuthToken();
+  if (!authToken) {
+    return { success: false, message: 'Not authenticated.', data: [] };
+  }
+  try {
+    const response = await authenticatedFetch(
+      `${CAMPAIGNS_ENDPOINT}/${encodeURIComponent(campaignId)}/my-supports`,
+      {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${authToken}` },
+      },
+    );
+    let payload: any;
+    try {
+      payload = await response.json();
+    } catch {
+      return {
+        success: false,
+        message: 'Unexpected response format.',
+        data: [],
+      };
+    }
+    if (!response.ok) {
+      return {
+        success: false,
+        message:
+          payload?.message || payload?.error || 'Failed to fetch supporters.',
+        data: [],
+      };
+    }
+    const raw: any[] = Array.isArray(payload?.data)
+      ? payload.data
+      : Array.isArray(payload)
+        ? payload
+        : [];
+    const data: CampaignSupportItem[] = raw.map((r) => ({
+      id: r.id ?? '',
+      name: r.user_name ?? r.name ?? '',
+      email: r.user_email ?? r.email ?? '',
+      message: r.message ?? '',
+      amount: r.amount ?? 0,
+      created_at: r.created_at ?? '',
+    }));
+    return { success: true, message: 'Supporters loaded.', data };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unexpected error';
+    return { success: false, message: `Connection error: ${msg}`, data: [] };
+  }
+}
+
+export async function fetchCampaignInquiries(
+  campaignId: string,
+): Promise<FetchCampaignInquiriesResponse> {
+  const authToken = resolveStoredAuthToken();
+  if (!authToken) {
+    return { success: false, message: 'Not authenticated.', data: [] };
+  }
+  try {
+    const response = await authenticatedFetch(
+      `${CAMPAIGNS_ENDPOINT}/${encodeURIComponent(campaignId)}/my-inquiries`,
+      {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${authToken}` },
+      },
+    );
+    let payload: any;
+    try {
+      payload = await response.json();
+    } catch {
+      return {
+        success: false,
+        message: 'Unexpected response format.',
+        data: [],
+      };
+    }
+    if (!response.ok) {
+      return {
+        success: false,
+        message:
+          payload?.message || payload?.error || 'Failed to fetch inquiries.',
+        data: [],
+      };
+    }
+    const raw: any[] = Array.isArray(payload?.data)
+      ? payload.data
+      : Array.isArray(payload)
+        ? payload
+        : [];
+    const data: CampaignInquiryItem[] = raw.map((r) => ({
+      id: r.id ?? '',
+      name: r.name ?? '',
+      email: r.email ?? '',
+      phone: r.phone ?? '',
+      message: r.message ?? '',
+      created_at: r.created_at ?? '',
+    }));
+    return { success: true, message: 'Inquiries loaded.', data };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unexpected error';
+    return { success: false, message: `Connection error: ${msg}`, data: [] };
   }
 }

@@ -379,11 +379,11 @@ export function NewCampaignPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <aside className="bg-white rounded-2xl p-4 shadow-md lg:col-span-4">
+          <aside className="hidden lg:block bg-white rounded-2xl p-4 shadow-md lg:col-span-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
               Live Preview
             </h3>
-            <CampaignCard campaign={previewCampaign} onReadMore={() => {}} />
+            <CampaignCard campaign={previewCampaign} />
           </aside>
 
           <section className="bg-white rounded-2xl p-6 shadow-md lg:col-span-8">
@@ -600,7 +600,7 @@ export function NewCampaignPage() {
                   htmlFor="campaign-image"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Image (optional)
+                  Image*
                 </label>
                 <input
                   id="campaign-image"

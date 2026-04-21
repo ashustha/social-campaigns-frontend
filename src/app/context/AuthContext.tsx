@@ -126,6 +126,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: data.role || 'user',
       };
 
+      // Strictly deny admin accounts from the client portal
+      if (userData.role === 'admin') {
+        return {
+          success: false,
+          message: 'Admin accounts must use the admin portal.',
+        };
+      }
+
+      // Only allow user and business roles on the client side
+      if (!['user', 'business'].includes(userData.role)) {
+        return {
+          success: false,
+          message: 'Access denied. Invalid account type.',
+        };
+      }
+
       // Store token and user data in localStorage
       if (authToken) {
         localStorage.setItem('authToken', authToken);
