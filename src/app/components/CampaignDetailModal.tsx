@@ -181,8 +181,70 @@ export function CampaignDetailModal({
         className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Interaction Bar - Floating Sidebar */}
-        <div className="fixed right-8 top-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-3 flex flex-col gap-3 border border-gray-200 z-50">
+        {/* Interaction Bar - Mobile Bottom Bar */}
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 flex items-center justify-around z-50 shadow-lg">
+          <button
+            onClick={handleUpvote}
+            disabled={isSubmittingVote}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              userVote === 'upvote'
+                ? 'bg-green-500 text-white'
+                : 'bg-gray-100 text-gray-700'
+            }`}
+          >
+            <ThumbsUp className="size-4" />
+            <span className="text-sm font-semibold">{upvotes}</span>
+          </button>
+          <button
+            onClick={handleDownvote}
+            disabled={isSubmittingVote}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              userVote === 'downvote'
+                ? 'bg-red-500 text-white'
+                : 'bg-gray-100 text-gray-700'
+            }`}
+          >
+            <ThumbsDown className="size-4" />
+            <span className="text-sm font-semibold">{downvotes}</span>
+          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowShareMenu(!showShareMenu)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 transition-colors"
+            >
+              <Share2 className="size-4" />
+              <span className="text-sm font-semibold">Share</span>
+            </button>
+            {showShareMenu && (
+              <div className="absolute bottom-full mb-2 right-0 bg-white rounded-lg shadow-xl border border-gray-200 p-2 min-w-[130px]">
+                <button
+                  onClick={() => handleShare('facebook')}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-lg"
+                >
+                  <Facebook className="size-4 text-blue-600" />
+                  Facebook
+                </button>
+                <button
+                  onClick={() => handleShare('twitter')}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-lg"
+                >
+                  <Twitter className="size-4 text-blue-400" />
+                  Twitter
+                </button>
+                <button
+                  onClick={() => handleShare('linkedin')}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-lg"
+                >
+                  <Linkedin className="size-4 text-blue-700" />
+                  LinkedIn
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Interaction Bar - Desktop Floating Sidebar */}
+        <div className="hidden sm:flex fixed right-8 top-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-3 flex-col gap-3 border border-gray-200 z-50">
           <button
             onClick={handleUpvote}
             disabled={isSubmittingVote}
@@ -244,8 +306,10 @@ export function CampaignDetailModal({
         </div>
 
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl z-10">
-          <h2 className="text-2xl font-bold text-gray-900">{campaign.title}</h2>
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center rounded-t-2xl z-10">
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-900 pr-2 leading-tight">
+            {campaign.title}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2 transition-colors"
@@ -254,11 +318,11 @@ export function CampaignDetailModal({
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6 pb-20 sm:pb-6">
           {/* Multimedia Area */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             {campaign.videoUrl ? (
-              <div className="relative h-96 rounded-xl overflow-hidden bg-black">
+              <div className="relative h-48 sm:h-96 rounded-xl overflow-hidden bg-black">
                 <iframe
                   src={campaign.videoUrl}
                   className="w-full h-full"
@@ -268,7 +332,7 @@ export function CampaignDetailModal({
                 />
               </div>
             ) : (
-              <div className="relative h-96 rounded-xl overflow-hidden">
+              <div className="relative h-48 sm:h-96 rounded-xl overflow-hidden">
                 <ImageWithFallback
                   src={campaign.image}
                   alt={campaign.title}
@@ -300,56 +364,56 @@ export function CampaignDetailModal({
           <div className="space-y-6">
             {/* Primary Content */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
                 About This Campaign
               </h3>
-              <p className="text-lg text-gray-700 leading-relaxed">
+              <p className="text-sm sm:text-lg text-gray-700 leading-relaxed">
                 {campaign.fullDescription}
               </p>
             </div>
 
             {/* Secondary Content - Campaign Stats */}
-            <div className="grid grid-cols-2 gap-4 p-6 bg-gray-50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <Users className="size-6 text-blue-600" />
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-6 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="bg-blue-100 p-2 sm:p-3 rounded-lg shrink-0">
+                  <Users className="size-4 sm:size-6 text-blue-600" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Supporters</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">Supporters</p>
+                  <p className="text-base sm:text-xl font-bold text-gray-900 truncate">
                     {campaign.supporters}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <Calendar className="size-6 text-green-600" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="bg-green-100 p-2 sm:p-3 rounded-lg shrink-0">
+                  <Calendar className="size-4 sm:size-6 text-green-600" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Start Date</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">Start Date</p>
+                  <p className="text-base sm:text-xl font-bold text-gray-900 truncate">
                     {formatDisplayDate(campaign.startDate)}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="bg-purple-100 p-3 rounded-lg">
-                  <MapPin className="size-6 text-purple-600" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="bg-purple-100 p-2 sm:p-3 rounded-lg shrink-0">
+                  <MapPin className="size-4 sm:size-6 text-purple-600" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Location</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">Location</p>
+                  <p className="text-base sm:text-xl font-bold text-gray-900 truncate">
                     {campaign.location}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="bg-orange-100 p-3 rounded-lg">
-                  <Mail className="size-6 text-orange-600" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="bg-orange-100 p-2 sm:p-3 rounded-lg shrink-0">
+                  <Mail className="size-4 sm:size-6 text-orange-600" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Contact</p>
-                  <p className="text-base font-bold text-gray-900">
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-500">Contact</p>
+                  <p className="text-sm sm:text-base font-bold text-gray-900 truncate">
                     {campaign.contact}
                   </p>
                 </div>
@@ -358,8 +422,8 @@ export function CampaignDetailModal({
 
             {/* Tertiary Content - Goals */}
             <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Target className="size-6 text-blue-600" />
+              <h3 className="text-base sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                <Target className="size-5 sm:size-6 text-blue-600" />
                 Campaign Goals
               </h3>
               <ul className="space-y-3">
@@ -380,7 +444,7 @@ export function CampaignDetailModal({
             {/* CTA Button */}
             <button
               onClick={campaign.type === 'cause' ? onSupportCause : onLearnMore}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg"
+              className="w-full flex items-center justify-center gap-2 px-4 sm:px-6 py-3 sm:py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-base sm:text-lg"
             >
               {campaign.type === 'cause' ? (
                 <>

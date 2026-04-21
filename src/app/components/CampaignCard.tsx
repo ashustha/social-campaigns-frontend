@@ -30,7 +30,6 @@ interface Campaign {
 
 interface CampaignCardProps {
   campaign: Campaign;
-  onReadMore: (campaign: Campaign) => void;
   onVoteUpdate?: (
     campaignId: string,
     upvotes: number,
@@ -48,18 +47,13 @@ function formatDisplayDate(dateValue: string) {
   return parsedDate.toLocaleDateString('en-GB');
 }
 
-export function CampaignCard({
-  campaign,
-  onReadMore,
-  onVoteUpdate,
-}: CampaignCardProps) {
+export function CampaignCard({ campaign, onVoteUpdate }: CampaignCardProps) {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [upvotes, setUpvotes] = useState(campaign.upvotes || 0);
   const [downvotes, setDownvotes] = useState(campaign.downvotes || 0);
   const [userVote, setUserVote] = useState<'upvote' | 'downvote' | null>(null);
   const [showLoginVotePrompt, setShowLoginVotePrompt] = useState(false);
-  const [showLoginReadPrompt, setShowLoginReadPrompt] = useState(false);
   const [isSubmittingVote, setIsSubmittingVote] = useState(false);
 
   useEffect(() => {
@@ -146,11 +140,7 @@ export function CampaignCard({
   };
 
   const handleReadMore = () => {
-    if (!isAuthenticated) {
-      setShowLoginReadPrompt(true);
-      return;
-    }
-    onReadMore(campaign);
+    navigate(`/campaign/${campaign.id}`);
   };
 
   const campaignDateLabel = campaign.endDate
@@ -259,16 +249,6 @@ export function CampaignCard({
         onClose={() => setShowLoginVotePrompt(false)}
         title="Login Required"
         message="You need to login to vote. Would you like to login now?"
-        confirmText="Login"
-        onConfirm={() => navigate('/login')}
-      />
-
-      {/* Login Prompt for Reading More */}
-      <ConfirmationModal
-        isOpen={showLoginReadPrompt}
-        onClose={() => setShowLoginReadPrompt(false)}
-        title="Login Required"
-        message="You need to login to view campaign details. Would you like to login now?"
         confirmText="Login"
         onConfirm={() => navigate('/login')}
       />

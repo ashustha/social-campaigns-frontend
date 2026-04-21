@@ -29,6 +29,8 @@
 
 The Admin Panel is a web-based management interface for the Social Awareness Platform. It provides administrators with tools to monitor and manage users, campaigns, inquiries, and support contributions.
 
+**Repository:** https://github.com/ashustha/social-campaigns-frontend
+
 **Key capabilities:**
 
 - View platform statistics at a glance (dashboard)
@@ -45,9 +47,8 @@ The Admin Panel is a web-based management interface for the Social Awareness Pla
 
 Navigate to:
 
-```
-http://localhost:5173/admin/login
-```
+- **Local development:** `http://localhost:5173/admin/login`
+- **Production (Netlify):** `<your-netlify-url>/admin/login`
 
 The admin panel is completely separate from the user-facing site. All admin routes are prefixed with `/admin`.
 
@@ -63,6 +64,8 @@ The admin panel is completely separate from the user-facing site. All admin rout
 - Regular user or business accounts will be rejected with an "Access denied" message.
 
 On successful login, you will be redirected to the **Dashboard**.
+
+> **Note:** The user portal at `/login` also enforces role separation — admin credentials are rejected there with the message _"Admin accounts must use the admin portal."_ This prevents accidental cross-portal logins.
 
 ### 2.3 Session & Authentication
 
@@ -298,7 +301,14 @@ All listing pages (Users, Campaigns, Inquiries, Supports) share these features p
 
 All admin API endpoints require a valid JWT access token with `admin` role.
 
-**Base URL:** `http://localhost:3000/api`
+**Base URL:**
+
+| Environment | URL                                                                   |
+| ----------- | --------------------------------------------------------------------- |
+| Local Dev   | `http://localhost:3000/api`                                           |
+| Production  | `https://social-awareness-campaigns-team5-project.up.railway.app/api` |
+
+The base URL is configured via the `VITE_API_BASE_URL` environment variable.
 
 ### Authentication
 
@@ -425,23 +435,23 @@ Login → POST /auth/login → JWT access token (15min) + refresh cookie (7 days
 
 ### Database Tables
 
-| Table                | Purpose                                              |
-| -------------------- | ---------------------------------------------------- |
-| `users`              | User accounts (role ENUM: user/admin/business)       |
-| `campaigns`          | Campaign data (status ENUM: pending/active/rejected) |
-| `campaign_inquiries` | Inquiry messages on campaigns                        |
-| `supports`           | Financial contributions                              |
+| Table                | Purpose                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------- |
+| `users`              | User accounts (role ENUM: user/admin/business). Individual users are stored as `user`.      |
+| `campaigns`          | Campaign data (status ENUM: pending/active/rejected). Campaign type: `cause` or `business`. |
+| `campaign_inquiries` | Inquiry messages on campaigns                                                               |
+| `supports`           | Financial contributions                                                                     |
 
 ---
 
 ## 12. Troubleshooting
 
-| Problem                            | Solution                                                                                   |
-| ---------------------------------- | ------------------------------------------------------------------------------------------ |
-| Login says "Access denied"         | Your account doesn't have the `admin` role in the database.                                |
-| Redirected to login frequently     | The refresh token may have expired. Log in again.                                          |
-| Dashboard shows all zeros          | Check that the backend server is running on port 3000.                                     |
-| Campaign images not loading        | Ensure the backend `/uploads` directory is accessible and CORS is configured.              |
-| Table shows no data                | Check browser console for API errors. Verify the backend is running.                       |
-| Status change button not working   | Check browser console for 401/403 errors. Re-login if needed.                              |
-| Campaigns not showing on user site | Only `active` campaigns appear on the public homepage. Activate them from the admin panel. |
+| Problem                            | Solution                                                                                           |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Login says "Access denied"         | Your account doesn't have the `admin` role in the database.                                        |
+| Redirected to login frequently     | The refresh token may have expired. Log in again.                                                  |
+| Dashboard shows all zeros          | Check that the backend server is running. In production, verify the Railway backend is accessible. |
+| Campaign images not loading        | Ensure the backend `/uploads` directory is accessible and CORS is configured.                      |
+| Table shows no data                | Check browser console for API errors. Verify the backend is running.                               |
+| Status change button not working   | Check browser console for 401/403 errors. Re-login if needed.                                      |
+| Campaigns not showing on user site | Only `active` campaigns appear on the public homepage. Activate them from the admin panel.         |
